@@ -1,0 +1,42 @@
+MEJORAS REALIZADAS Y COMANDOS USADOS
+
+Archivos modificados o creados:
+
+1. src/db/conexion.ts
+   - Migrado completamente a TypeScript.
+   - Se agregó configuración SSL para Render.
+   - Se exporta pool y la función validarConexion.
+
+2. src/db/test-db.ts
+   - Adaptado a TypeScript puro (import/export).
+   - Se eliminó la inserción de prueba, ahora solo consulta y muestra las tareas existentes.
+
+3. src/db/reset-db.sql
+   - Creado para limpiar todas las tablas y reiniciar los IDs.
+
+Comandos SQL usados:
+
+-- Limpiar la base de datos:
+TRUNCATE TABLE flujo_tareas RESTART IDENTITY CASCADE;
+TRUNCATE TABLE horarios RESTART IDENTITY CASCADE;
+TRUNCATE TABLE tareas RESTART IDENTITY CASCADE;
+TRUNCATE TABLE prioridades RESTART IDENTITY CASCADE;
+TRUNCATE TABLE estados_tarea RESTART IDENTITY CASCADE;
+TRUNCATE TABLE miembros RESTART IDENTITY CASCADE;
+TRUNCATE TABLE proyectos RESTART IDENTITY CASCADE;
+
+-- Insertar datos base para pruebas:
+INSERT INTO proyectos (nombre, descripcion) VALUES ('Proyecto demo', 'Descripción del proyecto');
+INSERT INTO miembros (nombre, puesto) VALUES ('Miembro demo', 'Desarrollador');
+INSERT INTO estados_tarea (nombre) VALUES ('Pendiente');
+INSERT INTO prioridades (nombre) VALUES ('Alta');
+
+-- Insertar una tarea de prueba:
+INSERT INTO tareas (titulo, descripcion, fecha_limite, estado_id, prioridad_id, proyecto_id, miembro_id)
+VALUES ('Tarea de prueba', 'Descripción de prueba', '2026-03-10', 1, 1, 1, 1);
+
+-- Consultar tareas:
+SELECT * FROM tareas;
+
+Comando para ejecutar el script de consulta en Node.js:
+npx ts-node backend/src/db/test-db.ts
