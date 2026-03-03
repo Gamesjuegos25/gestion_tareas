@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador de Tareas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-numero {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+
+        .tareas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .tarea-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 25px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .tarea-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .tarea-id {
+            font-size: 0.75em;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .tarea-titulo {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #333;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .tarea-descripcion {
+            color: #666;
+            font-size: 0.95em;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .tarea-fecha {
+            font-size: 0.85em;
+            color: #888;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tarea-estado {
+            display: inline-block;
+            padding: 8px 15px;
+            border-radius: 25px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .tarea-estado.pendiente {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .tarea-estado.completada {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 60px 20px;
+            font-size: 1.1em;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #f5c6cb;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 30px;
+            overflow-x: auto;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            padding: 12px 20px;
+            background: #f0f0f0;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .tab-button:hover {
+            background: #e8e8e8;
+        }
+
+        .tab-button.active {
+            background: white;
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table thead {
+            background: #f5f5f5;
+        }
+
+        table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+            color: #333;
+            border-bottom: 2px solid #ddd;
+        }
+
+        table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        table tbody tr:hover {
+            background: #f9f9f9;
+        }
+
+        .table-empty {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Tareas Disponibles</h1>
+            <p>Conectado a la base de datos PostgreSQL</p>
+        </div>
+
+        <div class="content">
+            <!-- Estadísticas -->
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-numero" id="totalTareas">0</div>
+                    <div class="stat-label">Total de Tareas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-numero" id="tareasActivas">0</div>
+                    <div class="stat-label">Pendientes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-numero" id="tareasCompletadas">0</div>
+                    <div class="stat-label">Completadas</div>
+                </div>
+            </div>
+
+            <!-- Pestañas para ver las tablas -->
+            <div class="tabs" id="tabsContainer">
+                <button class="tab-button active" onclick="cambiarTab('tareas')">📋 Tareas</button>
+                <button class="tab-button" onclick="cambiarTab('estados_tarea')">🏷️ Estados</button>
+                <button class="tab-button" onclick="cambiarTab('proyectos')">📁 Proyectos</button>
+                <button class="tab-button" onclick="cambiarTab('miembros')">👥 Miembros</button>
+                <button class="tab-button" onclick="cambiarTab('prioridades')">⚡ Prioridades</button>
+                <button class="tab-button" onclick="cambiarTab('horarios')">⏰ Horarios</button>
+                <button class="tab-button" onclick="cambiarTab('flujo_tareas')">📊 Flujo Tareas</button>
+            </div>
+
+            <!-- Contenido de tareas (vista en tarjetas) -->
+            <div id="tareas-content" class="tab-content active">
+                <h2>Visualización de Tareas</h2>
+                <div id="tareasGrid" class="tareas-grid">
+                    <div class="loading">⏳ Cargando tareas...</div>
+                </div>
+            </div>
+
+            <!-- Contenido de otras tablas (vista en tabla) -->
+            <div id="tabla-content" class="tab-content">
+                <h2 id="tablaTitle">Tabla</h2>
+                <div id="tablaContainer">
+                    <div class="loading">⏳ Cargando datos...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tablaActual = 'tareas';
+
+        // Cargar tareas al abrir la página
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarTareas();
+            // Recargar cada 5 segundos
+            setInterval(cargarTareas, 5000);
+        });
+
+        function cambiarTab(tabla) {
+            tablaActual = tabla;
+            
+            // Actualizar botones activos
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Cambiar contenido visible
+            if (tabla === 'tareas') {
+                document.getElementById('tareas-content').classList.add('active');
+                document.getElementById('tabla-content').classList.remove('active');
+                cargarTareas();
+            } else {
+                document.getElementById('tareas-content').classList.remove('active');
+                document.getElementById('tabla-content').classList.add('active');
+                cargarTabla(tabla);
+            }
+        }
+
+        async function cargarTareas() {
+            try {
+                const response = await fetch('http://localhost:5000/api/tareas');
+                const tareas = await response.json();
+                mostrarTareas(tareas);
+                actualizarEstadisticas(tareas);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('tareasGrid').innerHTML = 
+                    '<div class="error">❌ No se pudo conectar al servidor</div>';
+            }
+        }
+
+        async function cargarTabla(nombreTabla) {
+            try {
+                const response = await fetch(`http://localhost:5000/api/tabla/${nombreTabla}`);
+                const datos = await response.json();
+                mostrarTabla(nombreTabla, datos);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('tablaContainer').innerHTML = 
+                    '<div class="error">❌ Error cargando tabla</div>';
+            }
+        }
+
+        function obtenerNombreEstado(tarea) {
+            return String(tarea.estado_nombre || tarea.estado || tarea.nombre_estado || '').toLowerCase().trim();
+        }
+
+        function formatearEstado(estado) {
+            if (!estado) return 'Pendiente';
+            return estado
+                .replace(/_/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .replace(/\b\w/g, letra => letra.toUpperCase());
+        }
+
+        function tareaEsCompletada(tarea) {
+            const estado = obtenerNombreEstado(tarea);
+            return estado.includes('complet') || estado.includes('terminad') || estado.includes('finaliz') || estado.includes('done');
+        }
+
+        function tareaEsPendiente(tarea) {
+            return !tareaEsCompletada(tarea);
+        }
+
+        function obtenerEstadoVisual(tarea) {
+            const estado = obtenerNombreEstado(tarea);
+
+            if (tareaEsCompletada(tarea)) {
+                return {
+                    clase: 'completada',
+                    texto: `✅ ${formatearEstado(estado || 'completada')}`
+                };
+            }
+
+            return {
+                clase: 'pendiente',
+                texto: `⏳ ${formatearEstado(estado || 'pendiente')}`
+            };
+        }
+
+        function mostrarTareas(tareas) {
+            const lista = document.getElementById('tareasGrid');
+            
+            if (tareas.length === 0) {
+                lista.innerHTML = '<div class="vacio">📭 No hay tareas disponibles</div>';
+                return;
+            }
+
+            lista.innerHTML = tareas.map(tarea => {
+                const estadoVisual = obtenerEstadoVisual(tarea);
+
+                return `
+                <div class="tarea-card">
+                    <div class="tarea-id">ID: ${tarea.id}</div>
+                    <div class="tarea-titulo">${tarea.titulo}</div>
+                    <div class="tarea-descripcion">${tarea.descripcion || '—'}</div>
+                    <div class="tarea-fecha">📅 ${new Date(tarea.fecha_limite).toLocaleDateString('es-ES', {year: 'numeric', month: 'long', day: 'numeric'})}</div>
+                    <div class="tarea-estado ${estadoVisual.clase}">
+                        ${estadoVisual.texto}
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function mostrarTabla(nombreTabla, datos) {
+            const container = document.getElementById('tablaContainer');
+            
+            document.getElementById('tablaTitle').textContent = nombreTabla.charAt(0).toUpperCase() + nombreTabla.slice(1);
+
+            if (datos.length === 0) {
+                container.innerHTML = '<div class="table-empty">📭 No hay datos en esta tabla</div>';
+                return;
+            }
+
+            // Obtener columnas del primer registro
+            const columnas = Object.keys(datos[0]);
+            
+            let html = '<table><thead><tr>';
+            columnas.forEach(col => {
+                html += `<th>${col}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            datos.forEach(fila => {
+                html += '<tr>';
+                columnas.forEach(col => {
+                    let valor = fila[col];
+                    // Formatear valores nulos y fechas
+                    if (valor === null) {
+                        valor = '—';
+                    } else if (valor instanceof Date) {
+                        valor = new Date(valor).toLocaleDateString('es-ES');
+                    } else if (typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}(T|\s|$)/.test(valor)) {
+                        const fecha = new Date(valor);
+                        if (!Number.isNaN(fecha.getTime())) {
+                            valor = fecha.toLocaleDateString('es-ES');
+                        }
+                    }
+                    html += `<td>${valor}</td>`;
+                });
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function actualizarEstadisticas(tareas) {
+            const total = tareas.length;
+            const activas = tareas.filter(tareaEsPendiente).length;
+            const completadas = tareas.filter(tareaEsCompletada).length;
+
+            document.getElementById('totalTareas').textContent = total;
+            document.getElementById('tareasActivas').textContent = activas;
+            document.getElementById('tareasCompletadas').textContent = completadas;
+        }
+    </script>
+</body>
+</html>
