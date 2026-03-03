@@ -20,23 +20,8 @@ export async function inicializarDB() {
     const client = await pool.connect();
     console.log("✅ Conexión a la base de datos exitosa");
 
-    // Crear tabla si no existe
-    try {
-      await client.query(`
-        CREATE TABLE IF NOT EXISTS tareas (
-          id SERIAL PRIMARY KEY,
-          descripcion VARCHAR(255) NOT NULL,
-          estado VARCHAR(50) NOT NULL DEFAULT 'Pendiente'
-        )
-      `);
-      console.log("✅ Tabla 'tareas' lista");
-    } catch (tableError: any) {
-      if (tableError.code === '42501') {
-        console.log("⚠️ Usando tabla 'tareas' existente (permisos limitados)");
-      } else {
-        console.log("⚠️ Advertencia al crear tabla:", tableError.message);
-      }
-    }
+    // No creamos tablas aquí; asumimos que el esquema ya existe en el servidor.
+    // Si necesitas ejecutar migraciones, hazlo de forma separada.
 
     client.release();
   } catch (error) {
