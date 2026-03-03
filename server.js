@@ -22,7 +22,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 // GET - Listar todas las tareas
 app.get('/api/tareas', async (req, res) => {
   try {
-    const resultado = await pool.query('SELECT * FROM tareas ORDER BY creado_en DESC');
+    const resultado = await pool.query(`
+      SELECT
+        t.*,
+        e.nombre AS estado_nombre
+      FROM tareas t
+      LEFT JOIN estados_tarea e ON e.id::text = t.estado_id::text
+      ORDER BY t.creado_en DESC
+    `);
     res.json(resultado.rows);
   } catch (error) {
     console.error('Error:', error);

@@ -345,6 +345,44 @@
             }
         }
 
+        function obtenerNombreEstado(tarea) {
+            return String(tarea.estado_nombre || tarea.estado || tarea.nombre_estado || '').toLowerCase().trim();
+        }
+
+        function formatearEstado(estado) {
+            if (!estado) return 'Pendiente';
+            return estado
+                .replace(/_/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .replace(/\b\w/g, letra => letra.toUpperCase());
+        }
+
+        function tareaEsCompletada(tarea) {
+            const estado = obtenerNombreEstado(tarea);
+            return estado.includes('complet') || estado.includes('terminad') || estado.includes('finaliz') || estado.includes('done');
+        }
+
+        function tareaEsPendiente(tarea) {
+            return !tareaEsCompletada(tarea);
+        }
+
+        function obtenerEstadoVisual(tarea) {
+            const estado = obtenerNombreEstado(tarea);
+
+            if (tareaEsCompletada(tarea)) {
+                return {
+                    clase: 'completada',
+                    texto: `✅ ${formatearEstado(estado || 'completada')}`
+                };
+            }
+
+            return {
+                clase: 'pendiente',
+                texto: `⏳ ${formatearEstado(estado || 'pendiente')}`
+            };
+        }
+
         function mostrarTareas(tareas) {
             const lista = document.getElementById('tareasGrid');
             
@@ -353,17 +391,21 @@
                 return;
             }
 
-            lista.innerHTML = tareas.map(tarea => `
+            lista.innerHTML = tareas.map(tarea => {
+                const estadoVisual = obtenerEstadoVisual(tarea);
+
+                return `
                 <div class="tarea-card">
                     <div class="tarea-id">ID: ${tarea.id}</div>
                     <div class="tarea-titulo">${tarea.titulo}</div>
                     <div class="tarea-descripcion">${tarea.descripcion || '—'}</div>
                     <div class="tarea-fecha">📅 ${new Date(tarea.fecha_limite).toLocaleDateString('es-ES', {year: 'numeric', month: 'long', day: 'numeric'})}</div>
-                    <div class="tarea-estado ${tarea.estado_id === '1' ? 'pendiente' : 'completada'}">
-                        ${tarea.estado_id === '1' ? '⏳ Pendiente' : '✅ Completada'}
+                    <div class="tarea-estado ${estadoVisual.clase}">
+                        ${estadoVisual.texto}
                     </div>
                 </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function mostrarTabla(nombreTabla, datos) {
@@ -392,8 +434,13 @@
                     // Formatear valores nulos y fechas
                     if (valor === null) {
                         valor = '—';
-                    } else if (valor instanceof Date || typeof valor === 'string' && valor.includes('T')) {
+                    } else if (valor instanceof Date) {
                         valor = new Date(valor).toLocaleDateString('es-ES');
+                    } else if (typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}(T|\s|$)/.test(valor)) {
+                        const fecha = new Date(valor);
+                        if (!Number.isNaN(fecha.getTime())) {
+                            valor = fecha.toLocaleDateString('es-ES');
+                        }
                     }
                     html += `<td>${valor}</td>`;
                 });
@@ -406,8 +453,8 @@
 
         function actualizarEstadisticas(tareas) {
             const total = tareas.length;
-            const activas = tareas.filter(t => t.estado_id === '1').length;
-            const completadas = tareas.filter(t => t.estado_id === '2').length;
+            const activas = tareas.filter(tareaEsPendiente).length;
+            const completadas = tareas.filter(tareaEsCompletada).length;
 
             document.getElementById('totalTareas').textContent = total;
             document.getElementById('tareasActivas').textContent = activas;
