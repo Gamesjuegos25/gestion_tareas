@@ -49,6 +49,42 @@ async function cargarRegistros(tabla) {
   }
 }
 
+function esEstadoCompletado(estado) {
+  if (!estado) return false;
+  const completados = ['completada', 'terminada', 'Terminada', 'completado', 'terminado', 'Completada'];
+  return completados.some(s => estado.toString().toLowerCase().includes(s.toLowerCase()));
+}
+
+function mapearEstado(estadoId) {
+  // Mapear números a palabras
+  const estadoMap = {
+    1: 'pendiente',
+    2: 'en progreso',
+    3: 'completada',
+    7: 'Pendiente',
+    8: 'Terminada',
+    9: 'Por hacer'
+  };
+  
+  // Si es número, buscar en el mapa
+  if (typeof estadoId === 'number' || !isNaN(parseInt(estadoId))) {
+    const num = parseInt(estadoId);
+    return estadoMap[num] || `Estado ${num}`;
+  }
+  
+  // Si ya es texto, devolverlo tal cual
+  return estadoId ? estadoId.toString() : 'Desconocido';
+}
+
+function obtenerIconoEstado(estado) {
+  if (!estado) return '❓';
+  const lower = estado.toString().toLowerCase();
+  if (lower.includes('completada') || lower.includes('terminada')) return '✅';
+  if (lower.includes('progreso') || lower.includes('progress')) return '⏳';
+  if (lower.includes('por hacer') || lower.includes('pending') || lower.includes('pendiente')) return '📋';
+  return '❓';
+}
+
 function renderizarRegistros() {
   const container = document.getElementById('registros-list');
 
@@ -62,21 +98,24 @@ function renderizarRegistros() {
     return;
   }
 
-  container.innerHTML = registros.map(registro => `
-    <div class="registro-item ${registro.estado === 'Completada' ? 'completed' : ''}">
+  container.innerHTML = registros.map(registro => {
+    const estadoMapeado = mapearEstado(registro.estado);
+    return `
+    <div class="registro-item ${esEstadoCompletado(estadoMapeado) ? 'completed' : ''}">
       <span class="registro-id">#${registro.id}</span>
       <span class="registro-desc">${escapeHtml(registro.descripcion)}</span>
-      ${registro.estado ? `<span class="registro-estado ${registro.estado === 'Completada' ? 'completada' : ''}">${registro.estado}</span>` : ''}
+      ${estadoMapeado ? `<span class="registro-estado ${esEstadoCompletado(estadoMapeado) ? 'completada' : ''}">${obtenerIconoEstado(estadoMapeado)} ${estadoMapeado}</span>` : ''}
       <button class="registro-btn-delete" onclick="eliminarRegistro('${tablaSeleccionada}', ${registro.id})">
         ❌ Eliminar
       </button>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function actualizarStats() {
   const total = registros.length;
-  const completadas = registros.filter(r => r.estado === 'Completada').length;
+  const completadas = registros.filter(r => esEstadoCompletado(mapearEstado(r.estado))).length;
   const pendientes = total - completadas;
 
   document.getElementById('stat-total').textContent = total;

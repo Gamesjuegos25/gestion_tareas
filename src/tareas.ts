@@ -1,6 +1,6 @@
 import pool from './db';
 
-export type Estado = "Pendiente" | "Completada";
+export type Estado = string;
 
 export interface Tarea {
   id: number;
@@ -13,8 +13,39 @@ export interface Tabla {
   cantidad: number;
 }
 
+function mapEstado(estadoId: any): string {
+  // Si ya es string, devolverlo tal cual
+  if (typeof estadoId === 'string') {
+    const estadoMapStr: { [key: string]: string } = {
+      'pendiente': 'pendiente',
+      'en_progreso': 'en progreso',
+      'completada': 'completada',
+      'Pendiente': 'Pendiente',
+      'Terminada': 'Terminada',
+      'Por hacer': 'Por hacer'
+    };
+    return estadoMapStr[estadoId] || estadoId;
+  }
+  
+  // Si es número, mapear a palabra
+  if (typeof estadoId === 'number' || !isNaN(parseInt(estadoId))) {
+    const num = parseInt(estadoId);
+    const estadoMap: { [key: number]: string } = {
+      1: 'pendiente',
+      2: 'en progreso',
+      3: 'completada',
+      7: 'Pendiente',
+      8: 'Terminada',
+      9: 'Por hacer'
+    };
+    return estadoMap[num] || `Estado ${num}`;
+  }
+  
+  return 'Desconocido';
+}
+
 function mapRow(row: any): Tarea {
-  const estado = row.estado_id === 1 ? 'Pendiente' : 'Completada';
+  const estado = row.estado_id ? mapEstado(row.estado_id) : (row.estado ? row.estado : undefined);
   return { id: Number(row.id), descripcion: row.descripcion, estado };
 }
 
@@ -66,11 +97,19 @@ export async function obtenerRegistrosTabla(tableName: string): Promise<Tarea[]>
     
     if (!idCol) return [];
     
-    return res.rows.map((row: any) => ({
-      id: Number(row[idCol!]),
-      descripcion: row[descCol!] || `Registro #${row[idCol!]}`,
-      estado: row.estado_id ? (row.estado_id === 1 ? 'Pendiente' : 'Completada') : undefined
-    }));
+    return res.rows.map((row: any) => {
+      let estado: string | undefined = undefined;
+      // Buscar columna de estado
+      const estadoCol = columnas.find(col => col === 'estado' || col === 'estado_id' || col === 'status');
+      if (estadoCol) {
+        estado = mapEstado(row[estadoCol]);
+      }
+      return {
+        id: Number(row[idCol!]),
+        descripcion: row[descCol!] || `Registro #${row[idCol!]}`,
+        estado
+      };
+    });
   } catch (err) {
     console.error('Error al obtener registros:', err);
     return [];
