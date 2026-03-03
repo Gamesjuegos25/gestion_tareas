@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 
 interface Task {
   id: number;
-  title: string;
-  description: string;
-  completed: boolean;
-  dueDate: string;
+  titulo: string;
+  descripcion: string;
+  fecha_limite: string;
+  estado_id: number;
 }
 
 function TaskList() {
@@ -26,10 +26,10 @@ function TaskList() {
         <ul>
           {tasks.map((task) => (
             <li key={task.id} style={{ marginBottom: '10px', padding: '10px', border: '1px solid #ccc', borderRadius: '5px' }}>
-              <h3>{task.title}</h3>
-              <p>{task.description}</p>
-              <p>Fecha límite: {task.dueDate}</p>
-              <p>Estado: {task.completed ? '✅ Completada' : '⏳ Pendiente'}</p>
+              <h3>{task.titulo}</h3>
+              <p>{task.descripcion}</p>
+              <p>Fecha límite: {task.fecha_limite?.split('T')[0]}</p>
+              <p>Estado: {task.estado_id === 1 ? '⏳ Pendiente' : '✅ Completada'}</p>
             </li>
           ))}
         </ul>
