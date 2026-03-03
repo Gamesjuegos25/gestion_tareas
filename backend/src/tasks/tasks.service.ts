@@ -1,37 +1,43 @@
 import { Injectable } from '@nestjs/common';
-import { Task } from './entities/task.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Task } from '../db/task.entity';
+import { EstadoTarea } from '../db/estado-tarea.entity';
+import { Prioridad } from '../db/prioridad.entity';
+import { CreateTaskDto } from './dto/create-task.dto';
 
 @Injectable()
 export class TasksService {
-  private tasks: Task[] = [];
+  constructor(
+    @InjectRepository(Task)
+    private taskRepository: Repository<Task>,
+    @InjectRepository(EstadoTarea)
+    private estadoRepository: Repository<EstadoTarea>,
+    @InjectRepository(Prioridad)
+    private prioridadRepository: Repository<Prioridad>,
+  ) {}
 
-  findAll(): Task[] {
-    return this.tasks;
+  async findAll(): Promise<Task[]> {
+    return this.taskRepository.find({
+      order: {
+        id: 'DESC',
+      },
+    });
   }
 
-  create(task: Omit<Task, 'id'>): Task {
-    const newTask: Task = {
-      ...task,
-      id: Date.now(),
-    };
-    this.tasks.push(newTask);
-    return newTask;
-  }
-
-  update(id: number, updatedTask: Partial<Task>): Task | undefined {
-    const idx = this.tasks.findIndex(t => t.id === id);
-    if (idx === -1) return undefined;
-    this.tasks[idx] = { ...this.tasks[idx], ...updatedTask };
-    return this.tasks[idx];
-  }
-
-  remove(id: number): boolean {
-    const prevLen = this.tasks.length;
-    this.tasks = this.tasks.filter(t => t.id !== id);
-    return this.tasks.length < prevLen;
-  }
-
-  moveToColumn(id: number, columna: string): Task | undefined {
-    return this.update(id, { columna });
+  async create(createTaskDto: CreateTaskDto): Promise<Task> {
+    try {
+      const task = new Task();
+      task.titulo = createTaskDto.titulo;
+      task.descripcion = createTaskDto.descripcion;
+      task.fechaEntrega = createTaskDto.fechaEntrega;
+      task.estadoId = 1; // Pendiente por defecto
+      task.prioridadId = 1; // Prioridad por defecto
+      
+      return await this.taskRepository.save(task);
+    } catch (error) {
+      console.error('Error creando tarea:', error);
+      throw error;
+    }
   }
 }
