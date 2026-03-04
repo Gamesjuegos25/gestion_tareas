@@ -1,34 +1,28 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body } from '@nestjs/common';
 import { TasksService } from './tasks.service';
-import { CreateTaskDto } from './dto/create-task.dto';
-import { UpdateTaskDto } from './dto/update-task.dto';
+
+// Importamos el DTO que elegimos usar para crear tareas con fecha
+import { EditarTareaDto } from '../editartarea.dto'; 
 
 @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
-  @Post()
-  create(@Body() createTaskDto: CreateTaskDto) {
-    return this.tasksService.create(createTaskDto);
-  }
-
+  // 1. Obtener todas las tareas (US-03)
   @Get()
   findAll() {
     return this.tasksService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.tasksService.findOne(+id);
+  // 2. Crear una tarea nueva (US-04) <-- ¡ESTA ES LA NUEVA RUTA!
+  @Post()
+  create(@Body() createDatos: EditarTareaDto) {
+    return this.tasksService.create(createDatos);
   }
 
+  // 3. Modificar/Mover una tarea existente (US-05)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
-    return this.tasksService.update(+id, updateTaskDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.tasksService.remove(+id);
+  update(@Param('id') id: string, @Body() updateData: any) {
+    return this.tasksService.update(+id, updateData);
   }
 }
