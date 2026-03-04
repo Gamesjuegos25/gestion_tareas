@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Filtro de Tareas - Marlito</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      h1 { color: #333; margin-top: 0; }
+      
+      .tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 20px 0;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #ddd;
+      }
+      .tab-btn {
+        padding: 10px 16px;
+        border: none;
+        background: #e0e0e0;
+        color: #333;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.3s;
+      }
+      .tab-btn:hover {
+        background: #d0d0d0;
+      }
+      .tab-btn.active {
+        background: #007bff;
+        color: white;
+      }
+      .tab-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      
+      .form-section {
+        display: none;
+      }
+      .form-section.active {
+        display: block;
+      }
+      
+      label {
+        display: block;
+        margin-top: 12px;
+        font-weight: 500;
+        color: #333;
+      }
+      input, select {
+        padding: 8px;
+        margin-top: 4px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        width: 100%;
+        max-width: 300px;
+      }
+      button {
+        margin-top: 12px;
+        padding: 10px 16px;
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+      }
+      button:hover {
+        background: #218838;
+      }
+      
+      .results {
+        margin-top: 20px;
+      }
+      h2 { color: #333; }
+      pre {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 6px;
+        max-height: 600px;
+        overflow: auto;
+        border: 1px solid #ddd;
+        font-size: 12px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+      
+      #out {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 6px;
+        max-height: 600px;
+        overflow: auto;
+        border: 1px solid #ddd;
+      }
+      
+      #out.error {
+        color: #d32f2f;
+        background: #ffebee;
+      }
+      
+      .count-badge {
+        display: inline-block;
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin-left: 8px;
+      }
+    </style>
+  </head>
+  
+  <body>
+    <div class="container">
+      <h1>📋 Gestor de Tareas</h1>
+      <p style="color: #666;">Filtra tareas por estado y gestiona tu proyecto</p>
+      
+      <div class="tabs" id="tabs">
+        <button class="tab-btn" id="loading-btn" disabled>Cargando estados...</button>
+      </div>
+      
+      <div class="results">
+        <h2>Tareas encontradas <span class="count-badge" id="count-badge">0</span></h2>
+        <div id="out">Sin resultados</div>
+      </div>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
