@@ -32,3 +32,8 @@ export enum Estado {
         @IsNotEmpty()
         prioridad: Prioridad;
     }
+
+    export class CambiarEstadoDto {
+        @IsEnum(Estado)
+        estado: Estado;
+    }

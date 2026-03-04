@@ -1,73 +1,94 @@
 import { Injectable } from '@nestjs/common';
-import { CreateTaskDto } from './dto/create-task.dto';
-import { UpdateTaskDto } from './dto/update-task.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Task } from './entities/task.entity';
+
+// Importamos tus DTOs originales
+import { EditarTareaDto } from '../editartarea.dto'; 
+import { CrearTareaDto } from '../cambiarestado.dto';
 
 @Injectable()
 export class TasksService {
-  create(createTaskDto: CreateTaskDto) {
-    return 'This action adds a new task';
-  }
+  constructor(
+    @InjectRepository(Task)
+    private taskRepository: Repository<Task>,
+  ) {}
 
+  // ==========================================
+  // US-03: LEER TODAS LAS TAREAS (GET)
+  // ==========================================
   findAll() {
-    return `This action returns all tasks`;
+    return this.taskRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} task`;
-  }
-
-  update(id: number, updateTaskDto: UpdateTaskDto) {
-    return `This action updates a #${id} task`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} task`;
-  }
-}
-
-import { CrearTareaDto } from 'src/cambiarestado.dto';
-import {Tarea, Estado, Prioridad} from 'src/cambiarestado.dto';
- import { EditarTareaDto } from 'src/editartarea.dto';
-
-export class TareasService {
-  private tareas: Tarea[] = [];
-
-  create( datos : CrearTareaDto): Tarea {
-   const nuevaTarea: Tarea = {
-    id: this.tareas.length + 1,
-    titulo: datos.titulo,
-    descripcion: datos.descripcion,
-    prioridad: datos.prioridad,
-    fechaLimite: new Date().toISOString(),
-    estado: Estado.PorHacer,
-    };
-    this.tareas.push(nuevaTarea);
-    return nuevaTarea;
-  }
-   actualizarTarea(id: number, datos: EditarTareaDto): Tarea | null {
-    const tareaActual = this.tareas.find(tarea => tarea.id === id);
-    if (tareaActual) {
-      if (datos.descripcion) {
-        tareaActual.descripcion = datos.descripcion;
-      }
-      if (datos.fechaLimite) {
-        tareaActual.fechaLimite = datos.fechaLimite;
-      }
-
-      const vencimientoTarea = new Date(tareaActual.fechaLimite);
-      const fechaActual = new Date();
-      if (vencimientoTarea < fechaActual) {
-        console.log (`La tarea "${tareaActual.titulo}" ha vencido.`);
-      }
-
-      if (datos.titulo) {
-        tareaActual.titulo = datos.titulo;
-      }
-      return tareaActual;
+  // ==========================================
+  // US-04: CREAR UNA NUEVA TAREA (POST)
+  // ==========================================
+  async create(datos: EditarTareaDto & { estado_id?: number, prioridad?: number }) {
+    // 1. Creamos un molde en blanco de tu Entidad para evitar el error "DeepPartial"
+    const nuevaTarea = new Task();
+    
+    // 2. Lo llenamos propiedad por propiedad de forma segura
+    // Le ponemos un texto por defecto por si el DTO lo trae vacío al ser opcional
+    nuevaTarea.titulo = datos.titulo || 'Nueva tarea'; 
+    nuevaTarea.estado_id = datos.estado_id || 1; // "To Do" por defecto
+    
+    if (datos.descripcion) {
+      nuevaTarea.descripcion = datos.descripcion;
     }
-    return null;
+    
+    if (datos.fechaLimite) {
+      nuevaTarea.fecha_limite = new Date(datos.fechaLimite);
+    }
+
+    // 3. Guardamos en la nube de Render
+    return await this.taskRepository.save(nuevaTarea);
+  }
+
+  // ==========================================
+  // US-05: ACTUALIZAR Y MOVER TAREA (PATCH)
+  // ==========================================
+  async update(id: number, datos: EditarTareaDto & { estado_id?: number }) {
+    // 1. Buscamos la tarea actual en Render
+    const tareaActual = await this.taskRepository.findOneBy({ id });
+
+    if (!tareaActual) {
+      return null; // Si no existe, no hacemos nada
+    }
+
+    // 2. Preparamos el paquete de datos para guardar
+    const datosParaGuardar: any = {};
+
+    if (datos.titulo) {
+      datosParaGuardar.titulo = datos.titulo;
+    }
+
+    if (datos.descripcion) {
+      datosParaGuardar.descripcion = datos.descripcion;
+    }
+
+    // 3. ¡TU LÓGICA ORIGINAL DE VENCIMIENTO! ⏰
+    if (datos.fechaLimite) {
+      datosParaGuardar.fecha_limite = new Date(datos.fechaLimite);
+
+      // Verificamos si ya venció
+      const vencimientoTarea = new Date(datos.fechaLimite);
+      const fechaActual = new Date();
+      
+      if (vencimientoTarea < fechaActual) {
+        console.log(`⚠️ ALERTA: La tarea "${datos.titulo || tareaActual.titulo}" ya ha vencido.`);
+      }
+    }
+
+    // 4. Lógica para cuando arrastras la tarjeta (cambio de estado)
+    if (datos.estado_id) {
+      datosParaGuardar.estado_id = datos.estado_id;
+    }
+
+    // 5. Guardamos los cambios en Render
+    await this.taskRepository.update(id, datosParaGuardar);
+
+    // 6. Devolvemos la tarea actualizada al Frontend
+    return this.taskRepository.findOneBy({ id });
   }
 }
-
-
-
