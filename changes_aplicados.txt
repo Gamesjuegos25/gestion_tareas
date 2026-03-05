@@ -1,0 +1,38 @@
+Resumen de cambios aplicados al proyecto (generado automáticamente)
+
+Backend:
+- backend/package.json: Se agregaron dependencias de Prisma y validación (`@prisma/client`, `prisma`, `class-transformer`, `class-validator`) y `@tailwindcss/postcss`.
+- backend/package-lock.json: Actualización/inclusión de paquetes relacionados con Prisma, Tailwind y dependencias nuevas.
+- backend/prisma/schema.prisma: Nuevo archivo Prisma schema para modelos `tareas`, `estados_tarea`, `prioridades`, `proyectos`, `horarios`, `miembros`, `flujo_tareas`.
+- backend/sample-tasks.ts: Archivo nuevo para crear tareas de ejemplo en la BD usando Prisma.
+- backend/seed.ts: Script nuevo para poblar datos iniciales (estados y prioridades).
+- backend/src/app.module.ts: Se añadieron `AppController` y `AppService` en `controllers` y `providers`.
+- backend/src/main.ts: CORS actualizado para aceptar orígenes adicionales y puerto por defecto cambiado a 8000.
+- backend/src/tasks/entities/task.entity.ts: Se añadió la propiedad opcional `estado` en la entidad `Task`.
+- backend/src/tasks/dto/create-task.dto.ts: Nuevo DTO `CreateTaskDto` con validaciones de `class-validator`.
+- backend/src/tasks/tasks.controller.ts: Nuevas rutas `POST` (creación con `ValidationPipe`) y `PATCH/:id` para actualizar estado; importaciones añadidas.
+- backend/src/tasks/tasks.service.ts: Reemplazo de almacenamiento en memoria por uso de `PrismaClient`; métodos `findAll`, `create` y `updateTaskStatus` implementados para interactuar con la BD.
+- backend/prisma/schema.prisma (otra copia en ruta raíz prisma): Archivo Prisma adicional generado en `prisma/schema.prisma` (generator config hacia `../generated/prisma`).
+- .gitignore (nuevo): Añadido `node_modules`, `.env` y `/generated/prisma`.
+
+Frontend:
+- frontend/package.json: Se añadieron dependencias para formularios y validación (`react-hook-form`, `zod`, `@hookform/resolvers`) y herramientas para Tailwind/PostCSS (`autoprefixer`, `postcss`, `tailwindcss`, `@tailwindcss/postcss`).
+- frontend/package-lock.json: Lock actualizado con las nuevas dependencias y sub-dependencias.
+- frontend/postcss.config.cjs: Nuevo archivo de configuración PostCSS que registra `@tailwindcss/postcss` y `autoprefixer`.
+- frontend/tailwind.config.js: Nuevo archivo de configuración de Tailwind indicando `content` y `plugins`.
+- frontend/src/index.css: Reemplazado por directivas de Tailwind (`@tailwind base; @tailwind components; @tailwind utilities;`).
+- frontend/src/TaskList.tsx: Reescritura extensa: migración a `react-hook-form` + `zod`, nueva UI tipo Kanban con 3 columnas (Pendiente, En Progreso, Completado), drag & drop para mover tareas, modal movible y compacto para crear tareas, llamadas al backend apuntando a `http://localhost:8000`.
+- frontend/src/info de vite.txt: archivo eliminado.
+
+Generales / Otros:
+- Se añadieron o actualizaron `node_modules` relacionados a Tailwind, PostCSS y Prisma según los package-lock modificados.
+- Se añadieron scripts/archivos para integrar Prisma (esquema, client generator) y scripts de seed/sample.
+
+Pasos recomendados siguientes (opcionales):
+- Ejecutar `npm install` en `backend` y `frontend` para instalar dependencias nuevas.
+- Configurar `DATABASE_URL` en `.env` y ejecutar `npx prisma migrate dev` o `prisma db push` según flujo.
+- Correr `node backend/seed.ts` o `npx ts-node backend/seed.ts` para poblar inicialemente (asegúrate del entorno TS/Node).
+- Levantar backend: desde `backend` `npm run start:dev` y frontend: desde `frontend` `npm run dev`.
+
+Archivo generado: changes_aplicados.txt
+(fecha de generación: 2026-03-04)
