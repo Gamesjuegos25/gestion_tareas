@@ -1,0 +1,13 @@
+{
+  "name": "gestion_tareas-root",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "install-all": "npm --prefix gestion_tareas install",
+    "start": "npm --prefix gestion_tareas run dev",
+    "start-all": "concurrently \"npm --prefix gestion_tareas/backend run start:dev\" \"npm --prefix gestion_tareas/frontend run dev\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
