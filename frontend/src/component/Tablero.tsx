@@ -4,12 +4,12 @@ export const Tablero = () => {
   const [tareas, setTareas] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
 
-  // ESTADO PARA EL FILTRO (US-06)
+  // ESTADOS DE FILTRO Y BÚSQUEDA (US-06 y US-07)
   const [filtroEstado, setFiltroEstado] = useState<string>('Todas');
+  const [busqueda, setBusqueda] = useState<string>(''); // <-- NUEVO ESTADO PARA US-07
 
   // Estados del Modal (Edición / Creación)
   const [tareaEditando, setTareaEditando] = useState<any>(null);
-  // const [columnaCreando, setColumnaCreando] = useState<number | null>(null);
   const [tituloEdit, setTituloEdit] = useState('');
   const [descEdit, setDescEdit] = useState('');
   const [fechaEdit, setFechaEdit] = useState('');
@@ -111,12 +111,11 @@ export const Tablero = () => {
   // Definición base de columnas
   const columnasDelTablero = [
     { id: 1, titulo: 'To Do', progreso: '30%', dias: '7 days', tipo: 'Pendiente' },
-    { id: 3, titulo: 'In Progress', progreso: '60%', dias: '3 days', tipo: 'Pendiente' },
+    { id: 2, titulo: 'In Progress', progreso: '60%', dias: '3 days', tipo: 'Pendiente' },
     { id: 4, titulo: 'Done', progreso: '100%', dias: '0 days', tipo: 'Completada' }
   ];
 
-  // LOGICA DEL FILTRO (US-06)
-  // Filtramos qué columnas se van a mostrar en pantalla dependiendo del select
+  // LOGICA DEL FILTRO DE COLUMNAS (US-06)
   const columnasFiltradas = columnasDelTablero.filter(col => {
     if (filtroEstado === 'Todas') return true;
     if (filtroEstado === 'Pendientes') return col.tipo === 'Pendiente';
@@ -127,28 +126,63 @@ export const Tablero = () => {
   return (
     <div className="flex flex-col min-h-screen bg-[#f0f4f8] p-10 font-sans">
       
-      {/* BARRA SUPERIOR Y FILTROS (US-06) */}
-      <div className="mb-8 flex justify-between items-center bg-white p-5 rounded-[20px] shadow-sm border border-gray-100">
+      {/* BARRA SUPERIOR Y FILTROS */}
+      <div className="mb-8 flex justify-between items-center bg-white p-5 rounded-[20px] shadow-sm border border-gray-100 flex-wrap gap-4">
         <h1 className="text-2xl font-black text-[#001529]">Gestión de Tareas</h1>
         
-        <div className="flex items-center gap-3">
-          <span className="font-bold text-gray-400 uppercase text-xs tracking-wider">Ver:</span>
-          <select
-            value={filtroEstado}
-            onChange={(e) => setFiltroEstado(e.target.value)}
-            className="bg-[#f0f4f8] border-2 border-transparent text-[#001529] font-bold py-2 px-4 rounded-xl cursor-pointer outline-none focus:border-[#001529] transition-colors"
-          >
-            <option value="Todas">📚 Todas las tareas</option>
-            <option value="Pendientes">⏳ Solo Pendientes</option>
-            <option value="Completadas">✅ Solo Completadas</option>
-          </select>
+        <div className="flex items-center gap-4 flex-wrap">
+          
+          {/* BARRA DE BÚSQUEDA (US-07) */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Buscar por descripción o título..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="bg-[#f0f4f8] border-2 border-transparent text-[#001529] font-medium py-2 px-4 pr-10 rounded-xl outline-none focus:border-[#001529] transition-colors w-64"
+            />
+            {busqueda && (
+              <button 
+                onClick={() => setBusqueda('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 font-bold"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* FILTRO POR ESTADO (US-06) */}
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-gray-400 uppercase text-xs tracking-wider">Ver:</span>
+            <select
+              value={filtroEstado}
+              onChange={(e) => setFiltroEstado(e.target.value)}
+              className="bg-[#f0f4f8] border-2 border-transparent text-[#001529] font-bold py-2 px-4 rounded-xl cursor-pointer outline-none focus:border-[#001529] transition-colors"
+            >
+              <option value="Todas">📚 Todas</option>
+              <option value="Pendientes">⏳ Pendientes</option>
+              <option value="Completadas">✅ Completadas</option>
+            </select>
+          </div>
         </div>
       </div>
 
       {/* CONTENEDOR DEL TABLERO KANBAN */}
       <div className="relative flex gap-8 overflow-x-auto pb-4">
         {columnasFiltradas.map((columna) => {
-          const tareasDeEstaColumna = tareas.filter(t => Number(t.estado_id) === columna.id);
+          
+          // LÓGICA DE BÚSQUEDA (US-07): Filtramos las tareas de esta columna
+          const tareasDeEstaColumna = tareas.filter(t => {
+            const esDeEstaColumna = Number(t.estado_id) === columna.id;
+            
+            // Si hay búsqueda, revisamos si coincide (búsqueda parcial usando includes)
+            const terminoBusqueda = busqueda.toLowerCase();
+            const coincideBusqueda = busqueda === '' || 
+              (t.descripcion && t.descripcion.toLowerCase().includes(terminoBusqueda)) ||
+              (t.titulo && t.titulo.toLowerCase().includes(terminoBusqueda));
+
+            return esDeEstaColumna && coincideBusqueda;
+          });
 
           return (
             <div key={columna.id} className="flex-1 min-w-[340px] flex flex-col gap-6">
@@ -181,8 +215,9 @@ export const Tablero = () => {
                 onDrop={(e) => handleDrop(e, columna.id)}
               >
                 {tareasDeEstaColumna.length === 0 ? (
+                  // MENSAJE DE "NO HAY RESULTADOS" (US-07)
                   <div className="text-center text-gray-400 font-bold py-10 pointer-events-none select-none">
-                    Suelta tareas aquí
+                    {busqueda ? `No hay resultados para "${busqueda}"` : 'Suelta tareas aquí'}
                   </div>
                 ) : (
                   tareasDeEstaColumna.map(tarea => (
@@ -232,7 +267,7 @@ export const Tablero = () => {
         })}
       </div>
 
-      {/* MODAL DE EDICIÓN */}
+      {/* MODAL DE EDICIÓN OMITIDO AQUÍ POR BREVEDAD (ES EXACTAMENTE EL MISMO QUE YA TIENES) */}
       {(tareaEditando) && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white p-8 rounded-[30px] w-[500px] shadow-2xl border border-gray-200 flex flex-col gap-4">
