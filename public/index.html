@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eliminar Datos</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 700px;
+      width: 100%;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    header {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      padding: 30px 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      font-size: 14px;
+      opacity: 0.95;
+    }
+
+    .tabla-selector {
+      padding: 20px;
+      border-bottom: 1px solid #eee;
+      background: #f8f9fa;
+    }
+
+    .selector-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .selector-group label {
+      font-weight: 600;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .tabla-select {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 12px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tabla-select:hover {
+      border-color: #ef4444;
+    }
+
+    .tabla-select:focus {
+      outline: none;
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+
+    .tabla-info {
+      font-size: 12px;
+      color: #666;
+      background: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .registros-section {
+      padding: 20px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .registro-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border-left: 4px solid #ef4444;
+      transition: all 0.3s;
+    }
+
+    .registro-item:hover {
+      background: #f0f0f0;
+      transform: translateX(5px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .registro-item.completed {
+      opacity: 0.7;
+      border-left-color: #10b981;
+    }
+
+    .registro-item.completed .registro-desc {
+      text-decoration: line-through;
+      color: #999;
+    }
+
+    .registro-desc {
+      flex: 1;
+      font-size: 15px;
+      color: #333;
+      word-break: break-word;
+    }
+
+    .registro-id {
+      font-size: 11px;
+      color: #999;
+      background: #eee;
+      padding: 3px 6px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    .registro-estado {
+      font-size: 11px;
+      color: #666;
+      background: #fff3cd;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-weight: 500;
+    }
+
+    .registro-estado.completada {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .registro-btn-delete {
+      padding: 8px 12px;
+      background: #ef4444;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      font-size: 13px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .registro-btn-delete:hover {
+      background: #dc2626;
+      transform: scale(1.05);
+    }
+
+    .registro-btn-delete:active {
+      transform: scale(0.98);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      padding: 15px 20px;
+      background: #f8f9fa;
+      border-top: 1px solid #eee;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 24px;
+      font-weight: 700;
+      color: #ef4444;
+      display: block;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 30px 20px;
+      color: #999;
+    }
+
+    .success-msg {
+      background: #efe;
+      color: #3c3;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 10px;
+      text-align: center;
+      font-weight: 600;
+      animation: fadeIn 0.3s;
+    }
+
+    .error-msg {
+      background: #fee;
+      color: #c33;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 10px;
+      text-align: center;
+      font-weight: 600;
+      animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @media (max-width: 500px) {
+      header h1 {
+        font-size: 24px;
+      }
+
+      .registro-item {
+        flex-wrap: wrap;
+      }
+
+      .selector-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .tabla-select {
+        min-width: 100%;
+      }
+
+      .tabla-info {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🗑️ Eliminar Datos</h1>
+      <p>Selecciona una tabla y luego elige qué datos eliminar</p>
+    </header>
+
+    <div class="tabla-selector">
+      <div class="selector-group">
+        <label for="tabla-select">Tabla:</label>
+        <select id="tabla-select" class="tabla-select">
+          <option value="">-- Cargando tablas --</option>
+        </select>
+        <div id="tabla-info" class="tabla-info">-</div>
+      </div>
+    </div>
+
+    <div id="mensaje-container"></div>
+
+    <div class="registros-section">
+      <div id="registros-list"></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-number" id="stat-total">0</span>
+        Total
+      </div>
+      <div class="stat">
+        <span class="stat-number" id="stat-completadas">0</span>
+        Completadas
+      </div>
+      <div class="stat">
+        <span class="stat-number" id="stat-pendientes">0</span>
+        Pendientes
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
