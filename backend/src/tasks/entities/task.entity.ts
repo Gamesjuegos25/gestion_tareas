@@ -1,8 +1,7 @@
 export class Task {
   id: number;
-  titulo: string;
-  descripcion: string;
-  fechaEntrega: string;
-  dificultad: string;
-  columna: string;
+  title: string;
+  description: string;
+  dueDate: string;
+  completed?: boolean;
 }

@@ -1,0 +1,15 @@
+{
+  "name": "gestion_tareas",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "bootstrap": "npm --prefix backend install && npm --prefix frontend install",
+    "dev": "concurrently \"npm --prefix backend run start:dev\" \"npm --prefix frontend run dev\"",
+    "start-all": "node ./tools/start-all.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.1.4"
+  }
+}

@@ -1,0 +1,63 @@
+Instrucciones para ejecutar el proyecto
+
+1) Primera vez (instalar dependencias)
+
+Desde la carpeta raíz del repositorio (donde está este archivo):
+
+Windows / macOS / Linux (terminal):
+
+npm run bootstrap
+
+Esto instala las dependencias de `backend` y `frontend`.
+
+2) Arrancar frontend + backend a la vez
+
+npm run dev
+
+- Este script usa `concurrently` para ejecutar ambos procesos.
+- Frontend: http://localhost:5173/
+- Backend: http://localhost:3001/ (valor por defecto)
+
+3) Ejecutar solo uno de los servicios
+
+Arrancar solo backend (modo desarrollo):
+
+npm --prefix backend run start:dev
+
+Arrancar solo frontend (Vite):
+
+npm --prefix frontend run dev
+
+4) Si el backend falla con EADDRINUSE:8000 (puerto ocupado)
+
+PowerShell (buscar y matar proceso):
+
+netstat -ano | findstr :8000
+taskkill /PID <pid> /F
+
+Alternativa (npx):
+
+npx kill-port 8000
+
+5) Cambiar el puerto del backend
+
+Editar `backend/src/main.ts` para leer `process.env.PORT` o cambiar el número directamente.
+Ejemplo (simplificado):
+
+const port = process.env.PORT || 8000;
+await app.listen(port);
+
+6) Archivos y scripts añadidos
+
+- Se creó `package.json` raíz con los scripts:
+  - `npm run bootstrap` -> instala deps en `backend` y `frontend`.
+  - `npm run dev` -> arranca ambos servicios con `concurrently`.
+
+7) Sugerencias opcionales
+
+- Si quieres, puedo:
+  - Cambiar el puerto por defecto del backend.
+  - Añadir un `docker-compose.yml` para arrancar todo con un solo comando.
+  - Convertir este TXT a `README.md`.
+
+Fin.
