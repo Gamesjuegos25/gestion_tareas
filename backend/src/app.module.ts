@@ -23,3 +23,4 @@ import { Task } from './tasks/entities/task.entity';
   controllers: [AppController],
   providers: [AppService],
 })
+export class AppModule {}
