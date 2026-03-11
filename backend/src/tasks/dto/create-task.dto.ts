@@ -6,11 +6,11 @@ export class CreateTaskDto {
   title: string;
 
   @IsString()
-  @IsOptional()
-  description?: string;
+  @IsNotEmpty({ message: 'La descripción es obligatoria' }) // <-- ¡ESTRICTO PARA US-08!
+  description: string;
 
-  @IsOptional()
-  dueDate?: string;
+  @IsDateString({}, { message: 'La fecha límite debe ser válida' }) // <-- ¡ESTRICTO PARA US-08!
+  dueDate: string;
 
   @IsString()
   @IsOptional()

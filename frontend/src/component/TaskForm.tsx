@@ -1,14 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, type FC } from 'react';
 import { createTask } from '../api/Tasks';
 
 interface Props {
-  // Le pasamos la nueva tarea al Tablero para que la dibuje al instante
   onCreated?: (tareaNueva: any) => void;
-  // Recibimos la columna para saber dónde cayó el botón "+"
   columnaId?: number; 
 }
 
-export default function TaskForm({ onCreated, columnaId }: Props) {
+// CAMBIO: Definimos el componente usando la constante de tipo FC
+const TaskForm: FC<Props> = ({ onCreated, columnaId }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -19,25 +18,26 @@ export default function TaskForm({ onCreated, columnaId }: Props) {
     e.preventDefault();
     setError(null);
 
-    // Validar fecha: no puede ser anterior a hoy. (CÓDIGO ORIGINAL DEL COMPAÑERO)
     if (!dueDate) {
       setError('La fecha límite es obligatoria');
       return;
     }
+    
     const [y, m, d] = dueDate.split('-').map(Number);
     const inputDateLocal = new Date(y, m - 1, d);
     const now = new Date();
     const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
     if (inputDateLocal < todayLocal) {
-      setError('La fecha límite no puede ser anterior a la fecha actual');
+      setError('La fecha no puede ser anterior a hoy');
       return;
     }
 
     setLoading(true);
     try {
-      // Mandamos el ID de la columna para que sepa dónde guardarla
       const estadoFinal = columnaId ? String(columnaId) : '1';
       const newTask = await createTask({ title, description, dueDate, estado: estadoFinal });
+      
       setTitle('');
       setDescription('');
       setDueDate('');
@@ -49,13 +49,12 @@ export default function TaskForm({ onCreated, columnaId }: Props) {
     }
   }
 
-  // JSX ORIGINAL ADAPTADO A TU DISEÑO
   return (
-    <form onSubmit={handleSubmit} style={{ marginBottom: 20, display: 'grid', gap: 12 }}>
-      <div>
-        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Título</label>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full max-w-full overflow-x-hidden">
+      <div className="space-y-1">
+        <label className="block text-xs font-galilea font-tarea-bold text-brand-gray uppercase tracking-wider ml-2">Título de la Tarea</label>
         <input
-          className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold text-gray-700 focus:outline-none focus:border-[#001529]"
+          className="w-full border-3 border-brand-dark p-3.5 rounded-2xl font-galilea font-tarea-bold text-brand-dark outline-none focus:bg-brand-yellow/5 transition-colors placeholder:text-brand-gray/50 shadow-sm"
           placeholder="Ej. Comprar café..."
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -65,10 +64,10 @@ export default function TaskForm({ onCreated, columnaId }: Props) {
         />
       </div>
 
-      <div>
-        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Descripción</label>
+      <div className="space-y-1">
+        <label className="block text-xs font-galilea font-tarea-bold text-brand-gray uppercase tracking-wider ml-2">Descripción</label>
         <textarea
-          className="w-full border-2 border-gray-100 p-3 rounded-xl font-medium text-gray-600 focus:outline-none focus:border-[#001529] resize-none"
+          className="w-full border-3 border-brand-dark p-3.5 rounded-2xl font-galilea font-horario-reg text-brand-dark outline-none focus:bg-brand-yellow/5 transition-colors resize-none placeholder:text-brand-gray/50 shadow-sm"
           placeholder="Detalles de la tarea..."
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -79,21 +78,33 @@ export default function TaskForm({ onCreated, columnaId }: Props) {
         />
       </div>
 
-      <div>
-        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Fecha Límite</label>
+      <div className="space-y-1">
+        <label className="block text-xs font-galilea font-tarea-bold text-brand-gray uppercase tracking-wider ml-2">Fecha Límite</label>
         <input 
           type="date" 
           value={dueDate} 
           onChange={(e) => setDueDate(e.target.value)} 
-          className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold text-gray-700 focus:outline-none focus:border-[#001529]"
+          className="w-full border-3 border-brand-dark p-3.5 rounded-2xl font-titan text-brand-dark outline-none focus:bg-brand-yellow/5 transition-colors shadow-sm"
         />
       </div>
 
-      <button type="submit" disabled={loading} className="bg-[#001529] text-white px-8 py-3 rounded-full font-bold shadow-lg hover:scale-105 transition-transform mt-2">
-        {loading ? 'Creando...' : 'Crear Tarea'}
-      </button>
+      <div className="pt-2">
+        <button 
+          type="submit" 
+          disabled={loading} 
+          className="w-full bg-brand-dark text-brand-white py-4 rounded-full font-titan text-xl shadow-[5px_5px_0px_rgba(0,0,0,0.1)] hover:bg-brand-yellow hover:text-brand-dark hover:scale-[1.02] active:translate-y-1 active:shadow-none transition-all disabled:opacity-50 border-2 border-brand-dark uppercase tracking-wide"
+        >
+          {loading ? 'Procesando...' : 'Crear Tarea'}
+        </button>
+      </div>
       
-      {error && <div style={{ color: 'crimson', fontWeight: 'bold', textAlign: 'center' }}>⚠️ {error}</div>}
+      {error && (
+        <div className="bg-red-50 border-2 border-red-500 text-red-600 p-3 rounded-xl font-galilea font-tarea-bold text-sm text-center animate-bounce">
+          ⚠️ {error}
+        </div>
+      )}
     </form>
   );
 }
+
+export default TaskForm; // CAMBIO: Exportamos al final

@@ -1,119 +1,71 @@
-import { useEffect, useState } from 'react';
-import TaskForm from './TaskForm'; // <-- IMPORTAMOS EL FORMULARIO DE TU COMPAÑERO
+import { useState, type FC, type Dispatch, type SetStateAction } from 'react';
+import TaskForm from './TaskForm';
 
-export const Tablero = () => {
-  const [tareas, setTareas] = useState<any[]>([]);
-  const [cargando, setCargando] = useState(true);
+interface TableroProps {
+  tareas: any[];
+  setTareas: Dispatch<SetStateAction<any[]>>;
+  columnaCreando: number | null;
+  setColumnaCreando: Dispatch<SetStateAction<number | null>>;
+}
 
-  // ESTADOS DE FILTRO Y BÚSQUEDA (US-06 y US-07)
+export const Tablero: FC<TableroProps> = ({ tareas, setTareas, columnaCreando, setColumnaCreando }) => {
   const [filtroEstado, setFiltroEstado] = useState<string>('Todas');
   const [busqueda, setBusqueda] = useState<string>('');
-
-  // ESTADOS DEL MODAL (Edición / Creación)
   const [tareaEditando, setTareaEditando] = useState<any>(null);
-  const [columnaCreando, setColumnaCreando] = useState<number | null>(null); // <-- ESTADO PARA SABER DÓNDE CREAR
   const [tituloEdit, setTituloEdit] = useState('');
   const [descEdit, setDescEdit] = useState('');
   const [fechaEdit, setFechaEdit] = useState('');
+  const [columnasAbiertas, setColumnasAbiertas] = useState<number[]>([1]);
+  const [columnaHover, setColumnaHover] = useState<number | null>(null);
 
-  // 1. LEER TAREAS (GET)
-  useEffect(() => {
-    fetch('http://localhost:3000/tasks')
-      .then(response => response.json())
-      .then(data => {
-        setTareas(data);
-        setCargando(false);
-      })
-      .catch(error => {
-        console.error("Error al cargar tareas:", error);
-        setCargando(false);
-      });
-  }, []);
-
-  // 2. ACTUALIZAR ESTADO AL ARRASTRAR (PATCH)
   const actualizarEstadoEnBD = (tareaId: number, nuevoEstadoId: number) => {
     fetch(`http://localhost:3000/tasks/${tareaId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ estado_id: nuevoEstadoId })
     })
-      .then(response => response.json())
-      .then(() => {
-        setTareas(tareas.map(t => t.id === tareaId ? { ...t, estado_id: nuevoEstadoId } : t));
-      })
-      .catch(error => console.error("Error al actualizar estado:", error));
+    .then(() => {
+      setTareas(tareas.map(t => t.id === tareaId ? { ...t, estado_id: nuevoEstadoId } : t));
+    });
   };
 
-  // 3. ELIMINAR TAREA (DELETE)
   const eliminarTarea = (tareaId: number, e: React.MouseEvent) => {
-    e.stopPropagation(); 
-    if (!window.confirm('¿Estás seguro de que deseas eliminar esta tarea?')) return;
-
-    fetch(`http://localhost:3000/tasks/${tareaId}`, {
-      method: 'DELETE',
-    })
-      .then(response => response.json())
-      .then(() => {
-        setTareas(tareas.filter(t => t.id !== tareaId));
-      })
-      .catch(error => console.error("Error al eliminar tarea:", error));
+    e.stopPropagation();
+    if (!window.confirm('¿Eliminar esta tarea?')) return;
+    fetch(`http://localhost:3000/tasks/${tareaId}`, { method: 'DELETE' })
+      .then(() => setTareas(tareas.filter(t => t.id !== tareaId)));
   };
 
-  // 4. GUARDAR EDICIÓN (PATCH) - La creación ahora la maneja TaskForm
   const guardarEdicion = () => {
-    if (!tituloEdit.trim() || !tareaEditando) return; 
-
-    const payload: any = { titulo: tituloEdit, descripcion: descEdit };
-    if (fechaEdit) payload.fechaLimite = new Date(fechaEdit).toISOString(); 
-
+    if (!tituloEdit.trim() || !tareaEditando) return;
+    const payload = { titulo: tituloEdit, descripcion: descEdit, fecha_limite: fechaEdit ? new Date(fechaEdit).toISOString() : null };
     fetch(`http://localhost:3000/tasks/${tareaEditando.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
-      .then(response => response.json())
-      .then(() => {
-        setTareas(tareas.map(t =>
-          t.id === tareaEditando.id 
-            ? { ...t, titulo: tituloEdit, descripcion: descEdit, fecha_limite: payload.fechaLimite } 
-            : t
-        ));
-        cerrarModal();
-      });
+    .then(() => {
+      setTareas(tareas.map(t => t.id === tareaEditando.id ? { ...t, ...payload } : t));
+      cerrarModal();
+    });
   };
 
   const cerrarModal = () => {
     setTareaEditando(null);
-    setColumnaCreando(null); // Limpiamos también el estado de creación
+    setColumnaCreando(null);
     setTituloEdit('');
     setDescEdit('');
     setFechaEdit('');
   };
 
-  // DRAG & DROP LOGIC
-  const handleDragStart = (e: React.DragEvent, tareaId: number) => {
-    e.dataTransfer.setData('text/plain', tareaId.toString());
+  const toggleColumna = (id: number) => {
+    setColumnasAbiertas(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault(); 
-  };
-
-  const handleDrop = (e: React.DragEvent, columnaId: number) => {
-    e.preventDefault();
-    const tareaId = e.dataTransfer.getData('text/plain');
-    if (tareaId) actualizarEstadoEnBD(Number(tareaId), columnaId);
-  };
-
-  if (cargando) {
-    return <div className="text-center p-10 font-bold text-xl text-gray-500">Cargando tablero...</div>;
-  }
-
-  // Definición base de columnas
   const columnasDelTablero = [
     { id: 1, titulo: 'To Do', progreso: '30%', dias: '7 days', tipo: 'Pendiente' },
     { id: 2, titulo: 'In Progress', progreso: '60%', dias: '3 days', tipo: 'Pendiente' },
-    { id: 4, titulo: 'Done', progreso: '100%', dias: '0 days', tipo: 'Completada' }
+    { id: 3, titulo: 'Done', progreso: '100%', dias: '0 days', tipo: 'Completada' }
   ];
 
   const columnasFiltradas = columnasDelTablero.filter(col => {
@@ -124,217 +76,201 @@ export const Tablero = () => {
   });
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f0f4f8] p-10 font-sans">
+    <div className="flex flex-col gap-10">
       
-      {/* BARRA SUPERIOR Y FILTROS */}
-      <div className="mb-8 flex justify-between items-center bg-white p-5 rounded-[20px] shadow-sm border border-gray-100 flex-wrap gap-4">
-        <h1 className="text-2xl font-black text-[#001529]">Gestión de Tareas</h1>
-        
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Buscar por descripción o título..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              className="bg-[#f0f4f8] border-2 border-transparent text-[#001529] font-medium py-2 px-4 pr-10 rounded-xl outline-none focus:border-[#001529] transition-colors w-64"
-            />
-            {busqueda && (
-              <button 
-                onClick={() => setBusqueda('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 font-bold"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-gray-400 uppercase text-xs tracking-wider">Ver:</span>
-            <select
-              value={filtroEstado}
-              onChange={(e) => setFiltroEstado(e.target.value)}
-              className="bg-[#f0f4f8] border-2 border-transparent text-[#001529] font-bold py-2 px-4 rounded-xl cursor-pointer outline-none focus:border-[#001529] transition-colors"
-            >
-              <option value="Todas">📚 Todas</option>
-              <option value="Pendientes">⏳ Pendientes</option>
-              <option value="Completadas">✅ Completadas</option>
-            </select>
-          </div>
+      {/* BARRA DE FILTROS */}
+      <div className="flex justify-between items-center bg-brand-light p-5 rounded-[30px] border-2 border-brand-dark/10 shadow-sm">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Buscar tarea..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            className="bg-brand-white border-2 border-brand-dark py-2 px-6 rounded-full font-galilea font-horario-reg outline-none focus:ring-4 focus:ring-brand-yellow/30 w-80 text-brand-dark"
+          />
         </div>
+        <select
+          value={filtroEstado}
+          onChange={(e) => setFiltroEstado(e.target.value)}
+          className="bg-brand-dark text-brand-white py-2 px-8 rounded-full font-titan outline-none cursor-pointer hover:bg-brand-yellow hover:text-brand-dark transition-colors border-2 border-brand-dark"
+        >
+          <option value="Todas">Todas</option>
+          <option value="Pendientes">Pendientes</option>
+          <option value="Completadas">Completadas</option>
+        </select>
       </div>
 
-      {/* CONTENEDOR DEL TABLERO KANBAN */}
-      <div className="relative flex gap-8 overflow-x-auto pb-4">
+      {/* CONTENEDOR KANBAN */}
+      <div className="flex gap-8 items-start">
         {columnasFiltradas.map((columna) => {
+          const estaAbierta = columnasAbiertas.includes(columna.id);
+          const esHover = columnaHover === columna.id;
           
           const tareasDeEstaColumna = tareas.filter(t => {
             const esDeEstaColumna = Number(t.estado_id) === columna.id;
-            const terminoBusqueda = busqueda.toLowerCase();
             const coincideBusqueda = busqueda === '' || 
-              (t.descripcion && t.descripcion.toLowerCase().includes(terminoBusqueda)) ||
-              (t.titulo && t.titulo.toLowerCase().includes(terminoBusqueda));
-
+              (t.descripcion?.toLowerCase().includes(busqueda.toLowerCase())) ||
+              (t.titulo?.toLowerCase().includes(busqueda.toLowerCase()));
             return esDeEstaColumna && coincideBusqueda;
           });
 
           return (
-            <div key={columna.id} className="flex-1 min-w-[340px] flex flex-col gap-6">
+            <div key={columna.id} className="flex-1 flex flex-col gap-6">
               
-              {/* ENCABEZADO DE COLUMNA */}
-              <div className="bg-[#BCC4CD] rounded-[30px] p-6 flex flex-col shadow-lg border border-[#AAB4BF]">
-                <div className="flex justify-center mb-6">
-                  <h2 className="text-3xl font-black text-white bg-[#001529] px-6 py-2 rounded-full shadow-md select-none">
-                    {columna.titulo}
-                  </h2>
+              <div 
+                className={`rounded-[35px] p-6 border-2 border-brand-dark transition-all duration-300 shadow-[8px_8px_0px_rgba(0,29,61,0.1)] ${
+                  esHover ? 'bg-brand-yellow' : 'bg-brand-light'
+                }`}
+                onDragOver={(e) => { e.preventDefault(); setColumnaHover(columna.id); }}
+                onDragLeave={() => setColumnaHover(null)}
+                onDrop={(e) => {
+                  setColumnaHover(null);
+                  const id = e.dataTransfer.getData('text/plain');
+                  actualizarEstadoEnBD(Number(id), columna.id);
+                }}
+              >
+                <h2 className="text-3xl font-galilea font-tarea-bold text-brand-dark text-center mb-4 tracking-tight">
+                  {columna.titulo}
+                </h2>
+                
+                <div className="w-full h-4 bg-brand-dark rounded-full mb-1 overflow-hidden border-2 border-brand-dark shadow-inner">
+                  <div className="h-full bg-brand-white rounded-full transition-all duration-700" style={{ width: columna.progreso }}></div>
                 </div>
-                <div className="w-full h-3.5 bg-[#001529] rounded-full mb-1.5 overflow-hidden shadow-inner border border-[#001f3f]">
-                  <div className="h-full bg-slate-200 rounded-full shadow-md" style={{ width: columna.progreso }}></div>
-                </div>
-                <div className="flex justify-between text-[#001529] font-extrabold text-sm mb-6 select-none">
+                
+                <div className="flex justify-between items-center text-brand-dark font-galilea font-tarea-bold text-xs mb-6 px-1">
                   <span>Progreso</span>
-                  <span>{columna.progreso}</span>
+                  <span className="font-titan">{columna.progreso}</span>
                 </div>
-                <div className="flex justify-end items-center mt-auto">
-                  
-                  {/* BOTÓN + PARA CREAR TAREA AQUÍ */}
+                
+                <div className="flex justify-between items-center">
                   <button 
-                    onClick={() => setColumnaCreando(columna.id)}
-                    className="bg-[#001529] text-white rounded-full w-9 h-9 flex items-center justify-center text-xl font-extrabold shadow-lg hover:scale-110 transition-transform mr-auto"
-                    title="Añadir nueva tarea aquí"
+                    onClick={() => toggleColumna(columna.id)}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center text-3xl font-black shadow-lg border-2 border-brand-dark transition-all duration-300 ${
+                      estaAbierta 
+                        ? 'rotate-45 bg-brand-dark text-brand-white' 
+                        : 'bg-brand-dark text-brand-white hover:bg-brand-yellow hover:text-brand-dark'
+                    }`}
                   >
                     +
                   </button>
-
-                  <span className="bg-[#001529] text-white px-5 py-1.5 rounded-full text-xs font-bold shadow-lg select-none ml-auto">
+                  <span className="bg-brand-dark text-brand-white px-5 py-2 rounded-full text-xs font-titan border-2 border-brand-dark shadow-md">
                     {columna.dias}
                   </span>
                 </div>
               </div>
 
-              {/* ZONA DE CAÍDA (DROP ZONE) */}
-              <div 
-                className="bg-white rounded-[20px] p-5 flex flex-col gap-3 shadow-2xl border border-gray-100 flex-1 transition-colors hover:bg-gray-50"
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, columna.id)}
-              >
-                {tareasDeEstaColumna.length === 0 ? (
-                  <div className="text-center text-gray-400 font-bold py-10 pointer-events-none select-none">
-                    {busqueda ? `No hay resultados para "${busqueda}"` : 'Suelta tareas aquí'}
-                  </div>
-                ) : (
-                  tareasDeEstaColumna.map(tarea => (
+              {estaAbierta && (
+                <div className="flex flex-col gap-4 p-2 min-h-32 transition-all">
+                  {tareasDeEstaColumna.map(tarea => (
                     <div 
                       key={tarea.id} 
-                      className="relative group w-full flex justify-center cursor-grab active:cursor-grabbing"
                       draggable 
-                      onDragStart={(e) => handleDragStart(e, tarea.id)}
+                      onDragStart={(e) => e.dataTransfer.setData('text/plain', tarea.id.toString())}
+                      className="bg-brand-dark text-brand-white p-5 rounded-[25px] shadow-lg cursor-grab hover:scale-[1.03] active:cursor-grabbing border-2 border-brand-dark transition-all group relative"
                     >
-                      <span className="bg-[#001529] text-white px-8 py-2 rounded-[20px] text-sm font-bold shadow-md w-full text-center transition-transform hover:scale-[1.02] block select-none">
-                        {tarea.titulo}
-                        {tarea.fecha_limite && (
-                          <div className="text-[10px] text-gray-300 mt-1 font-normal">
-                            📅 {new Date(tarea.fecha_limite).toLocaleDateString()}
-                          </div>
-                        )}
-                      </span>
-
-                      {/* CONTENEDOR DE BOTONES */}
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation(); 
-                            setTareaEditando(tarea);
-                            setTituloEdit(tarea.titulo || '');
-                            setDescEdit(tarea.descripcion || '');
-                            const fechaFormateada = tarea.fecha_limite ? new Date(tarea.fecha_limite).toISOString().split('T')[0] : '';
-                            setFechaEdit(fechaFormateada);
-                          }}
-                          className="bg-white text-[#001529] rounded-full w-7 h-7 flex items-center justify-center shadow-lg text-sm hover:scale-110 cursor-pointer"
+                      <h4 className="font-galilea font-tarea-bold text-lg leading-tight">{tarea.titulo}</h4>
+                      {tarea.fecha_limite && (
+                        <p className="text-[11px] font-titan mt-3 text-brand-light opacity-90 flex items-center gap-2">
+                          {/* PARCHE HORARIO APLICADO AQUÍ */}
+                          ⏱ {tarea.fecha_limite.split('T')[0].split('-').reverse().join('/')}
+                        </p>
+                      )}
+                      
+                      <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => { setTareaEditando(tarea); setTituloEdit(tarea.titulo); setDescEdit(tarea.descripcion); setFechaEdit(tarea.fecha_limite?.split('T')[0] || ''); }} 
+                          className="bg-brand-white text-brand-dark w-8 h-8 rounded-full border-2 border-brand-dark flex items-center justify-center hover:bg-brand-yellow transition-colors"
                         >
                           ✏️
                         </button>
-                        <button
-                          onClick={(e) => eliminarTarea(tarea.id, e)}
-                          className="bg-red-100 text-red-600 rounded-full w-7 h-7 flex items-center justify-center shadow-lg text-sm hover:scale-110 cursor-pointer hover:bg-red-200 transition-colors"
+                        <button 
+                          onClick={(e) => eliminarTarea(tarea.id, e)} 
+                          className="bg-red-500 text-white w-8 h-8 rounded-full border-2 border-brand-dark flex items-center justify-center hover:bg-red-700"
                         >
-                          🗑️
+                          ✕
                         </button>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
+                  ))}
+                  {tareasDeEstaColumna.length === 0 && (
+                    <div className="text-center py-10 text-brand-gray font-galilea font-detalle-light border-4 border-dashed border-brand-light rounded-[30px] opacity-40">
+                      Arrastre tareas aquí
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
       </div>
 
-      {/* MODAL UNIFICADO (EDICIÓN Y CREACIÓN) */}
+      {/* MODAL UNIFICADO - ADAPTABLE Y SIN DESBORDAMIENTO */}
       {(tareaEditando || columnaCreando) && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-[30px] w-[500px] shadow-2xl border border-gray-200 flex flex-col gap-4 relative">
+        <div className="fixed inset-0 bg-brand-dark/60 backdrop-blur-md flex items-center justify-center z-100 p-4 sm:p-6">
+          <div className="bg-brand-white p-6 sm:p-10 rounded-[45px] w-full max-w-lg shadow-[15px_15px_0px_rgba(0,0,0,0.2)] relative border-4 border-brand-dark flex flex-col">
             
-            <button onClick={cerrarModal} className="absolute top-6 right-6 text-gray-400 hover:text-gray-800 font-bold text-xl">
+            <button 
+              onClick={cerrarModal} 
+              className="absolute top-6 right-8 text-brand-dark hover:text-brand-yellow font-titan text-2xl z-20 transition-colors"
+            >
               ✕
             </button>
 
-            <h3 className="text-2xl font-black text-[#001529] mb-4">
-              {tareaEditando ? 'Editar Tarea' : 'Nueva Tarea'}
-            </h3>
-            
-            {/* SI CREAMOS, USAMOS EL TASKFORM DE TU COMPAÑERO */}
-            {columnaCreando ? (
-              <TaskForm 
-                columnaId={columnaCreando} 
-                onCreated={(tareaNueva) => {
-                  setTareas([...tareas, tareaNueva]);
-                  cerrarModal(); 
-                }} 
-              />
-            ) : (
-              /* SI EDITAMOS, USAMOS TUS INPUTS CLÁSICOS */
-              <>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Título de la tarea</label>
-                  <input
-                    type="text"
-                    value={tituloEdit}
-                    onChange={(e) => setTituloEdit(e.target.value)}
-                    className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold text-gray-700 focus:outline-none focus:border-[#001529]"
+            <div className="overflow-y-auto overflow-x-hidden pr-2 custom-scrollbar">
+              <h3 className="text-3xl sm:text-4xl font-galilea font-tarea-bold text-brand-dark mb-6">
+                {tareaEditando ? 'Editar Tarea' : 'Nueva Tarea'}
+              </h3>
+              
+              {columnaCreando ? (
+                <div className="w-full">
+                  <TaskForm 
+                    columnaId={columnaCreando} 
+                    onCreated={(nt) => { setTareas([...tareas, nt]); cerrarModal(); }} 
                   />
                 </div>
+              ) : (
+                <div className="flex flex-col gap-5 w-full">
+                  <div className="space-y-1">
+                    <label className="text-xs font-galilea font-tarea-bold text-brand-gray ml-2 uppercase">Título</label>
+                    <input 
+                      type="text" 
+                      value={tituloEdit} 
+                      onChange={(e) => setTituloEdit(e.target.value)} 
+                      className="w-full border-3 border-brand-dark p-3.5 rounded-2xl font-galilea font-tarea-bold outline-none focus:bg-brand-yellow/5 text-brand-dark shadow-sm" 
+                      placeholder="Ej. Comprar café..." 
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Descripción</label>
-                  <textarea
-                    value={descEdit}
-                    onChange={(e) => setDescEdit(e.target.value)}
-                    rows={3}
-                    className="w-full border-2 border-gray-100 p-3 rounded-xl font-medium text-gray-600 focus:outline-none focus:border-[#001529] resize-none"
-                  />
-                </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-galilea font-tarea-bold text-brand-gray ml-2 uppercase">Descripción</label>
+                    <textarea 
+                      value={descEdit} 
+                      onChange={(e) => setDescEdit(e.target.value)} 
+                      className="w-full border-3 border-brand-dark p-3.5 rounded-2xl font-galilea font-horario-reg outline-none focus:bg-brand-yellow/5 text-brand-dark resize-none" 
+                      placeholder="Detalles de la tarea..." 
+                      rows={3}
+                    ></textarea>
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Fecha Límite</label>
-                  <input
-                    type="date"
-                    value={fechaEdit}
-                    onChange={(e) => setFechaEdit(e.target.value)}
-                    className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold text-gray-700 focus:outline-none focus:border-[#001529]"
-                  />
-                </div>
-                
-                <div className="flex justify-end gap-3 mt-4">
-                  <button onClick={cerrarModal} className="px-5 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded-full">
-                    Cancelar
+                  <div className="space-y-1">
+                    <label className="text-xs font-galilea font-tarea-bold text-brand-gray ml-2 uppercase">Fecha Límite</label>
+                    <input 
+                      type="date" 
+                      value={fechaEdit} 
+                      onChange={(e) => setFechaEdit(e.target.value)} 
+                      className="w-full border-3 border-brand-dark p-3.5 rounded-2xl font-titan outline-none focus:bg-brand-yellow/5 text-brand-dark" 
+                    />
+                  </div>
+
+                  <button 
+                    onClick={guardarEdicion} 
+                    className="w-full bg-brand-dark text-brand-white py-4 rounded-full font-titan text-xl hover:bg-brand-yellow hover:text-brand-dark transition-all shadow-[5px_5px_0px_rgba(0,0,0,0.1)] active:translate-y-1 active:shadow-none mt-4 border-2 border-brand-dark"
+                  >
+                    GUARDAR CAMBIOS
                   </button>
-                  <button onClick={guardarEdicion} className="bg-[#001529] text-white px-8 py-2 rounded-full font-bold shadow-lg hover:scale-105 transition-transform">
-                    Guardar Cambios
-                  </button>
                 </div>
-              </>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}
