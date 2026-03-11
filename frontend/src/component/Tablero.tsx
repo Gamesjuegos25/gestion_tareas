@@ -11,6 +11,7 @@ export const Tablero = () => {
   const [descEdit, setDescEdit] = useState('');
   const [fechaEdit, setFechaEdit] = useState('');
 
+  // 1. LEER TAREAS (GET)
   useEffect(() => {
     fetch('http://localhost:3000/tasks')
       .then(response => response.json())
@@ -24,7 +25,7 @@ export const Tablero = () => {
       });
   }, []);
 
-  // Función para mover tarea en la Base de Datos
+  // 2. ACTUALIZAR ESTADO AL ARRASTRAR (PATCH)
   const actualizarEstadoEnBD = (tareaId: number, nuevoEstadoId: number) => {
     fetch(`http://localhost:3000/tasks/${tareaId}`, {
       method: 'PATCH',
@@ -33,12 +34,28 @@ export const Tablero = () => {
     })
       .then(response => response.json())
       .then(() => {
-        // Actualiza el tablero instantáneamente
         setTareas(tareas.map(t => t.id === tareaId ? { ...t, estado_id: nuevoEstadoId } : t));
       })
       .catch(error => console.error("Error al actualizar estado:", error));
   };
 
+  // 3. ELIMINAR TAREA (DELETE) - US-04
+  const eliminarTarea = (tareaId: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // Evita que se active el drag & drop al hacer clic
+    if (!window.confirm('¿Estás seguro de que deseas eliminar esta tarea?')) return;
+
+    fetch(`http://localhost:3000/tasks/${tareaId}`, {
+      method: 'DELETE',
+    })
+      .then(response => response.json())
+      .then(() => {
+        // Quitamos la tarea de la pantalla inmediatamente
+        setTareas(tareas.filter(t => t.id !== tareaId));
+      })
+      .catch(error => console.error("Error al eliminar tarea:", error));
+  };
+
+  // 4. EDITAR TAREAS (PATCH) - US-03
   const guardarTarea = () => {
     if (!tituloEdit.trim()) return; 
 
@@ -46,7 +63,7 @@ export const Tablero = () => {
     if (fechaEdit) payload.fechaLimite = new Date(fechaEdit).toISOString(); 
 
     if (tareaEditando) {
-      // Editar
+      // Editar (PATCH)
       fetch(`http://localhost:3000/tasks/${tareaEditando.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -63,7 +80,7 @@ export const Tablero = () => {
         });
     } 
     /* ========================================================
-    LÓGICA DE CREAR TAREA (COMENTADA PARA USO FUTURO)
+    LÓGICA DE CREAR TAREA (COMENTADA PARA USO FUTURO - US-XX)
     ========================================================
     else if (columnaCreando) {
       payload.estado_id = columnaCreando;
@@ -78,8 +95,7 @@ export const Tablero = () => {
           cerrarModal();
         });
     }
-    ========================================================
-    */
+    ======================================================== */
   };
 
   const cerrarModal = () => {
@@ -90,9 +106,7 @@ export const Tablero = () => {
     setFechaEdit('');
   };
 
-  // ==========================================
-  // FUNCIONES DE ARRASTRAR Y SOLTAR (DRAG & DROP)
-  // ==========================================
+  // DRAG & DROP LOGIC
   const handleDragStart = (e: React.DragEvent, tareaId: number) => {
     e.dataTransfer.setData('text/plain', tareaId.toString());
   };
@@ -104,21 +118,17 @@ export const Tablero = () => {
   const handleDrop = (e: React.DragEvent, columnaId: number) => {
     e.preventDefault();
     const tareaId = e.dataTransfer.getData('text/plain');
-    
-    if (tareaId) {
-      actualizarEstadoEnBD(Number(tareaId), columnaId);
-    }
+    if (tareaId) actualizarEstadoEnBD(Number(tareaId), columnaId);
   };
 
   if (cargando) {
     return <div className="text-center p-10 font-bold text-xl text-gray-500">Cargando tablero...</div>;
   }
 
-  // IDs ajustados a tu base de datos real
   const columnasDelTablero = [
     { id: 1, titulo: 'To Do', progreso: '30%', dias: '7 days' },
-    { id: 3, titulo: 'In Progress', progreso: '60%', dias: '3 days' },
-    { id: 4, titulo: 'Done', progreso: '100%', dias: '0 days' }
+    { id: 2, titulo: 'In Progress', progreso: '60%', dias: '3 days' },
+    { id: 3, titulo: 'Done', progreso: '100%', dias: '0 days' }
   ];
 
   return (
@@ -154,9 +164,8 @@ export const Tablero = () => {
                 >
                   +
                 </button>
-                ========================================================
-                */}
-                <span className="bg-[#001529] text-white px-5 py-1.5 rounded-full text-xs font-bold shadow-lg select-none">
+                ======================================================== */}
+                <span className="bg-[#001529] text-white px-5 py-1.5 rounded-full text-xs font-bold shadow-lg select-none ml-auto">
                   {columna.dias}
                 </span>
               </div>
@@ -189,20 +198,33 @@ export const Tablero = () => {
                       )}
                     </span>
 
-                    {/* Botón de Editar */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation(); 
-                        setTareaEditando(tarea);
-                        setTituloEdit(tarea.titulo || '');
-                        setDescEdit(tarea.descripcion || '');
-                        const fechaFormateada = tarea.fecha_limite ? new Date(tarea.fecha_limite).toISOString().split('T')[0] : '';
-                        setFechaEdit(fechaFormateada);
-                      }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-white text-[#001529] rounded-full w-7 h-7 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg text-sm hover:scale-110 cursor-pointer"
-                    >
-                      ✏️
-                    </button>
+                    {/* CONTENEDOR DE BOTONES (EDITAR Y ELIMINAR) */}
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {/* Botón Editar */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation(); 
+                          setTareaEditando(tarea);
+                          setTituloEdit(tarea.titulo || '');
+                          setDescEdit(tarea.descripcion || '');
+                          const fechaFormateada = tarea.fecha_limite ? new Date(tarea.fecha_limite).toISOString().split('T')[0] : '';
+                          setFechaEdit(fechaFormateada);
+                        }}
+                        className="bg-white text-[#001529] rounded-full w-7 h-7 flex items-center justify-center shadow-lg text-sm hover:scale-110 cursor-pointer"
+                        title="Editar tarea"
+                      >
+                        ✏️
+                      </button>
+
+                      {/* Botón Eliminar */}
+                      <button
+                        onClick={(e) => eliminarTarea(tarea.id, e)}
+                        className="bg-red-100 text-red-600 rounded-full w-7 h-7 flex items-center justify-center shadow-lg text-sm hover:scale-110 cursor-pointer hover:bg-red-200 transition-colors"
+                        title="Eliminar tarea"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -212,11 +234,11 @@ export const Tablero = () => {
       })}
 
       {/* MODAL DE EDICIÓN */}
-      {(tareaEditando || columnaCreando) && (
+      {(tareaEditando) && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white p-8 rounded-[30px] w-[500px] shadow-2xl border border-gray-200 flex flex-col gap-4">
             <h3 className="text-2xl font-black text-[#001529] mb-2">
-              {tareaEditando ? 'Editar Tarea' : 'Nueva Tarea'}
+              Editar Tarea
             </h3>
             
             <div>
@@ -262,7 +284,6 @@ export const Tablero = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };
