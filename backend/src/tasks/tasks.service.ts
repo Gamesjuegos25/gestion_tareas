@@ -1,11 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task } from './entities/task.entity';
 
 // Importamos tus DTOs (Asegúrate de que las rutas sean correctas según tu carpeta)
 import { EditarTareaDto } from '../editartarea.dto'; 
-import { CrearTareaDto } from '../cambiarestado.dto';
+// IMPORTAMOS EL DTO DE TU COMPAÑERO PARA LA CREACIÓN
+import { CreateTaskDto } from './dto/create-task.dto';
 
 @Injectable()
 export class TasksService {
@@ -26,22 +27,31 @@ export class TasksService {
     return this.taskRepository.findOneBy({ id });
   }
 
-  // 3. CREAR UNA NUEVA TAREA (US-04)
-  async create(datos: CrearTareaDto) {
-    const nuevaTarea = new Task();
-    
-    nuevaTarea.titulo = datos.titulo || 'Nueva tarea'; 
-    nuevaTarea.estado_id = 1; // "To Do" por defecto
-    
-    if (datos.descripcion) {
-      nuevaTarea.descripcion = datos.descripcion;
-    }
-    
-    if (datos.fechaLimite) {
-      nuevaTarea.fecha_limite = new Date(datos.fechaLimite); 
-    }
+  // 3. CREAR UNA NUEVA TAREA (US-04 / US-01 Integrada)
+  async create(datos: CreateTaskDto & { estado_id?: number }) {
+    try {
+      // 1. Imprimimos los datos que llegan desde el Frontend
+      console.log('📥 Datos recibidos del frontend:', datos);
 
-    return await this.taskRepository.save(nuevaTarea);
+      // 2. Usamos .create() de TypeORM (mucho más seguro que "new Task()")
+      // Esto mapea directamente a las columnas y evita el error de "null"
+      const nuevaTarea = this.taskRepository.create({
+        titulo: datos.title || 'Nueva tarea',
+        descripcion: datos.description || 'Sin descripción',
+        fecha_limite: datos.dueDate ? new Date(datos.dueDate) : new Date(),
+        estado_id: datos.estado ? Number(datos.estado) : (datos.estado_id || 1)
+      });
+
+      // 3. Imprimimos cómo quedó armada la tarea antes de guardarla
+      console.log('🛠️ Tarea armada para TypeORM:', nuevaTarea);
+
+      // 4. Guardamos en la base de datos
+      return await this.taskRepository.save(nuevaTarea);
+      
+    } catch (error) {
+      console.error('❌ Error al crear tarea:', error);
+      throw new InternalServerErrorException('Error al crear la tarea en la base de datos');
+    }
   }
 
   // 4. ACTUALIZAR Y MOVER TAREA (US-03 / US-05)
