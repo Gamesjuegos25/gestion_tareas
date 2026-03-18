@@ -3,6 +3,12 @@ export interface TaskPayload {
   description: string;
   dueDate?: string;
   estado?: string;
+  prioridad_id: number;
+  horarios?: {
+    inicio: string;
+    fin: string;
+    tipo?: string;
+  }[];
 }
 
 export interface Task {
@@ -11,6 +17,7 @@ export interface Task {
   description: string;
   completed: boolean;
   dueDate: string;
+  prioridad_id: number;
 }
 
 const BASE = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:3000';

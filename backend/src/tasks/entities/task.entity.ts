@@ -1,4 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Horario } from './horario.entity';
+// 👇 1. IMPORTAMOS LA NUEVA ENTIDAD DE FLUJO
+import { FlujoTarea } from './flujo-tarea.entity';
 
 @Entity('tareas')
 export class Task {
@@ -31,4 +34,11 @@ export class Task {
 
   @UpdateDateColumn({ name: 'actualizado_en' })
   actualizado_en: Date;
+
+  @OneToMany(() => Horario, (horario) => horario.tarea, { cascade: true })
+  horarios: Horario[];
+
+  // 👇 2. AGREGAMOS LA RELACIÓN CON EL FLUJO DE TAREAS
+  @OneToMany(() => FlujoTarea, (flujo) => flujo.tarea, { cascade: true })
+  flujos: FlujoTarea[];
 }

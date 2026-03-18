@@ -65,7 +65,6 @@ export const SidebarRight: FC<SidebarRightProps> = ({ tareas, onAddTask, onCompl
       
       {/* PERFIL (CABECERA) */}
       <div className="flex items-center gap-4 bg-brand-light p-4 rounded-[25px] shrink-0 border-2 border-brand-dark/5 shadow-sm">
-        {/* CORRECCIÓN: flex-shrink-0 cambiado a shrink-0 */}
         <div className="w-14 h-14 bg-brand-dark rounded-full overflow-hidden border-2 border-brand-dark shrink-0">
             <img 
               src="/Mike.png" 
@@ -121,24 +120,44 @@ export const SidebarRight: FC<SidebarRightProps> = ({ tareas, onAddTask, onCompl
           })}
         </div>
 
+        {/* TIMELINE DE TAREAS (HORA DINÁMICA) */}
         <div className="space-y-6 relative before:absolute before:left-11px before:top-2 before:bottom-2 before:w-0.5 before:bg-brand-dark/10">
-          {tareasDelDia.length > 0 ? tareasDelDia.map((t, idx) => (
-            <div key={t.id} className="relative pl-10">
-              <span className="absolute left-0 top-1 text-[10px] font-titan text-brand-dark">
-                {10 + idx}:00
-              </span>
-              <div className="bg-brand-white p-4 rounded-2xl border-2 border-brand-dark shadow-[4px_4px_0px_rgba(0,29,61,0.1)] group relative">
-                <div className="absolute left-0 top-0 bottom-0 w-2 bg-brand-dark rounded-l-md"></div>
-                <div className="flex justify-between items-start mb-1">
-                    <h4 className="text-[11px] font-galilea font-tarea-bold text-brand-dark leading-tight pr-4">
-                        {t.titulo}
-                    </h4>
-                    <span className="text-brand-dark opacity-30 text-[10px]">•••</span>
+          {tareasDelDia.length > 0 ? tareasDelDia.map((t, idx) => {
+            // Lógica para extraer la hora de inicio y fin reales
+            let horaInicioStr = `${10 + idx}:00`; // Respaldo por si es una tarea antigua sin horario
+            let rangoStr = 'Tarea programada';
+
+            if (t.horarios && t.horarios.length > 0) {
+              const dInicio = new Date(t.horarios[0].inicio);
+              const dFin = new Date(t.horarios[0].fin);
+              
+              if (!isNaN(dInicio.getTime()) && !isNaN(dFin.getTime())) {
+                horaInicioStr = dInicio.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const horaFinStr = dFin.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                rangoStr = `${horaInicioStr} - ${horaFinStr}`;
+              }
+            }
+
+            return (
+              <div key={t.id} className="relative pl-10">
+                {/* HORA EN LA LÍNEA DEL TIEMPO */}
+                <span className="absolute left-0 top-1 text-[10px] font-titan text-brand-dark">
+                  {horaInicioStr}
+                </span>
+                <div className="bg-brand-white p-4 rounded-2xl border-2 border-brand-dark shadow-[4px_4px_0px_rgba(0,29,61,0.1)] group relative">
+                  <div className="absolute left-0 top-0 bottom-0 w-2 bg-brand-dark rounded-l-md"></div>
+                  <div className="flex justify-between items-start mb-1">
+                      <h4 className="text-[11px] font-galilea font-tarea-bold text-brand-dark leading-tight pr-4">
+                          {t.titulo}
+                      </h4>
+                      <span className="text-brand-dark opacity-30 text-[10px]">•••</span>
+                  </div>
+                  {/* TEXTO DENTRO DE LA TARJETA */}
+                  <p className="text-[9px] font-titan text-brand-gray">{rangoStr}</p>
                 </div>
-                <p className="text-[9px] font-titan text-brand-gray">Tarea programada</p>
               </div>
-            </div>
-          )) : (
+            )
+          }) : (
             <div className="text-center py-6">
               <p className="text-[10px] font-titan text-brand-dark opacity-30">No hay tareas para este día</p>
             </div>
