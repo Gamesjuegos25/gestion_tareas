@@ -19,7 +19,7 @@ export enum Estado {
         fechaLimite: string;
     }
 
-    import {IsString, IsEnum, IsNotEmpty} from 'class-validator';
+    import {IsString, IsEnum, IsNotEmpty, IsDateString} from 'class-validator';
 
     export class CrearTareaDto {
         @IsString()
@@ -31,4 +31,11 @@ export enum Estado {
         @IsEnum(Prioridad)
         @IsNotEmpty()
         prioridad: Prioridad;
+        @IsDateString()
+        fechaLimite: string;
+    }
+
+    export class CambiarEstadoDto {
+        @IsEnum(Estado)
+        estado: Estado;
     }
