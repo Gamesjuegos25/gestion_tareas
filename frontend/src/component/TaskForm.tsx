@@ -9,9 +9,32 @@ interface Props {
 const TaskForm: FC<Props> = ({ onCreated, columnaId }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [horaInicio, setHoraInicio] = useState('00:00'); // <-- ESTADO HORA INICIO
-  const [horaFin, setHoraFin] = useState('00:00');       // <-- ESTADO HORA FIN
+
+  // --------------modificacion Lógica de fecha y hora por defecto en base a pc ------------------
+  const formatDate = (d: Date) => {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+  const formatTime = (d: Date) => {
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${hh}:${min}`;
+  };
+  const addHours = (d: Date, hours: number) => new Date(d.getTime() + hours * 60 * 60 * 1000);
+
+  const hora_actual = new Date();
+  const initialDate = formatDate(hora_actual);
+  const initialHoraInicio = formatTime(hora_actual);
+  const initialHoraFin = formatTime(addHours(hora_actual, 1)); // para que termine una hora despues VALOR MODIFICABLE
+
+  const [dueDate, setDueDate] = useState(() => initialDate);
+  const [horaInicio, setHoraInicio] = useState(() => initialHoraInicio); // <-- ESTADO HORA INICIO
+  const [horaFin, setHoraFin] = useState(() => initialHoraFin);       // <-- ESTADO HORA FIN
+  // ------------------ fin de modificacion Lógica 
+  
+
   const [prioridadId, setPrioridadId] = useState('2');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -70,9 +93,14 @@ const TaskForm: FC<Props> = ({ onCreated, columnaId }) => {
       
       setTitle('');
       setDescription('');
-      setDueDate('');
-      setHoraInicio('10:00');
-      setHoraFin('12:00');
+      // ------------------ INICIO: Reset a fecha y hora actuales del PC
+      // Aquí se asigna `horaFin = ahora + 1 hora` usando `addHours(..., 1)`
+      setDueDate(formatDate(new Date()));
+      setHoraInicio(formatTime(new Date()));
+      // ------------------ INICIO: Se fija horaFin como horaInicio + 1 hora ------------------
+      setHoraFin(formatTime(addHours(new Date(), 1)));
+      // ------------------ FIN: Se fija horaFin como horaInicio + 1 hora ------------------
+      // ------------------ FIN: Reset a fecha y hora actuales del PC ------------------
       setPrioridadId('2');
       onCreated?.(newTask);
     } catch (err: any) {
