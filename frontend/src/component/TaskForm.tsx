@@ -48,6 +48,15 @@ const TaskForm: FC<Props> = ({ onCreated, columnaId }) => {
 
     if (!tituloLimpio) { setError('El título no puede estar vacío.'); return; }
     if (!descLimpia) { setError('La descripción no puede estar vacía.'); return; }
+
+    // -----modificacion Bloquear guiones y otros símbolos no permitidos en la descripción
+    // No permitir que la descripción empiece con número o símbolo; debe empezar por letra
+    const descripcionPermitida = /^[A-Za-zÁÉÍÓÚáéíóúÑñ][A-Za-z0-9ÁÉÍÓÚáéíóúÑñ\s\-\.,:;?()]*$/;
+    if (!descripcionPermitida.test(descLimpia)) {
+      setError('La descripción debe empezar con una letra; no puede comenzar con número ni símbolo');
+      return;
+     // ------------------ 
+    }
     if (!dueDate) { setError('La fecha límite es obligatoria'); return; }
 
     const tieneTextoValido = /[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]/;
