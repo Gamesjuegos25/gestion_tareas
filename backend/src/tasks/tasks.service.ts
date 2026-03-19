@@ -39,7 +39,45 @@ export class TasksService {
     if (estadoId === 3) return 100.00; // Done = 100%
     return 0.00;
   }
-  // 👆 ------------------------------------------------------------- 👆
+
+  //-----------------------------modificacion para problema de fecha anterior parse--
+
+  private parseDateString(value: any): Date { //parse local de la fecha, para evitar problemas de zona horaria
+    if (!value) return new Date();
+    if (value instanceof Date) return value;
+    const s = String(value);
+
+
+    const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(s);
+    if (dateOnly) {
+      const [y, m, d] = s.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    }
+
+    if (s.includes('T')) {
+
+      //si contiene info de zona horaria (Z o +hh o -hh) usar parseo nativo
+      if (/[zZ]|[+-]\d{2}:?\d{2}$/.test(s)) { 
+        return new Date(s);
+      }
+
+      // no zona horaria -> parse como local
+      try {
+        const [datePart, timePart] = s.split('T');
+        const [y, m, d] = datePart.split('-').map(Number);
+        const time = timePart.split(':').map(tp => Number(tp));
+        const hh = time[0] || 0;
+        const mm = time[1] || 0;
+        const ss = Math.floor(time[2] || 0);
+        return new Date(y, m - 1, d, hh, mm, ss);
+      } catch (e) {
+        return new Date(s);
+      }
+    }
+
+    return new Date(s);
+  }
+  //  ------------------------------------------------------------- 
 
   // 1. LEER TODAS LAS TAREAS (¡Ahora traemos también sus horarios y flujos!)
   findAll(): Promise<Task[]> {
@@ -69,14 +107,14 @@ export class TasksService {
       const nuevaTarea = this.taskRepository.create({
         titulo: datos.title || 'Nueva tarea',
         descripcion: datos.description || 'Sin descripción',
-        fecha_limite: datos.dueDate ? new Date(datos.dueDate) : new Date(),
+        fecha_limite: datos.dueDate ? this.parseDateString(datos.dueDate) : new Date(),
         estado_id: estadoInicial,
         prioridad_id: datos.prioridad_id ? Number(datos.prioridad_id) : 2,
         
         // Mapeamos los horarios si vienen en la petición
         horarios: datos.horarios ? datos.horarios.map(h => ({
-          inicio: new Date(h.inicio),
-          fin: new Date(h.fin),
+          inicio: this.parseDateString(h.inicio),
+          fin: this.parseDateString(h.fin),
           tipo: h.tipo || 'Planificado'
         })) : [],
 
@@ -131,8 +169,8 @@ export class TasksService {
 
     // Actualizamos fecha límite
     if (datos.fechaLimite) {
-      tareaActual.fecha_limite = new Date(datos.fechaLimite);
-      const vencimientoTarea = new Date(datos.fechaLimite);
+      tareaActual.fecha_limite = this.parseDateString(datos.fechaLimite);
+      const vencimientoTarea = this.parseDateString(datos.fechaLimite);
       const fechaActual = new Date();
       
       if (vencimientoTarea < fechaActual) {
@@ -143,8 +181,8 @@ export class TasksService {
     // ACTUALIZAMOS LOS HORARIOS
     if (datos.horarios) {
       tareaActual.horarios = datos.horarios.map(h => ({
-        inicio: new Date(h.inicio),
-        fin: new Date(h.fin),
+        inicio: this.parseDateString(h.inicio),
+        fin: this.parseDateString(h.fin),
         tipo: h.tipo || 'Planificado'
       })) as any; 
     }

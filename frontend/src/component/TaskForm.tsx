@@ -27,7 +27,7 @@ const TaskForm: FC<Props> = ({ onCreated, columnaId }) => {
   const hora_actual = new Date();
   const initialDate = formatDate(hora_actual);
   const initialHoraInicio = formatTime(hora_actual);
-  const initialHoraFin = formatTime(addHours(hora_actual, 1)); // para que termine una hora despues VALOR MODIFICABLE
+  const initialHoraFin = formatTime(addHours(hora_actual, 1)); // para que termine e una hora despues VALOR MODIFICABLE
 
   const [dueDate, setDueDate] = useState(() => initialDate);
   const [horaInicio, setHoraInicio] = useState(() => initialHoraInicio); // <-- ESTADO HORA INICIO
@@ -93,14 +93,13 @@ const TaskForm: FC<Props> = ({ onCreated, columnaId }) => {
       
       setTitle('');
       setDescription('');
-      // ------------------ INICIO: Reset a fecha y hora actuales del PC
-      // Aquí se asigna `horaFin = ahora + 1 hora` usando `addHours(..., 1)`
+      // ------------------Reset a fecha y hora actuales del PC
+    
       setDueDate(formatDate(new Date()));
       setHoraInicio(formatTime(new Date()));
-      // ------------------ INICIO: Se fija horaFin como horaInicio + 1 hora ------------------
       setHoraFin(formatTime(addHours(new Date(), 1)));
-      // ------------------ FIN: Se fija horaFin como horaInicio + 1 hora ------------------
-      // ------------------ FIN: Reset a fecha y hora actuales del PC ------------------
+  
+      // -----------------------------------
       setPrioridadId('2');
       onCreated?.(newTask);
     } catch (err: any) {

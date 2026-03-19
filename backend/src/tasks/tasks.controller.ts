@@ -17,6 +17,8 @@ export class TasksController {
   // 2. USAMOS LA VALIDACIÓN Y EL DTO DE TU COMPAÑERO PARA EL POST
   @Post()
   create(@Body() createTaskDto: CreateTaskDto) {
+    console.log('tasks.create - received body:', createTaskDto);
+    console.log('tasks.create - received dueDate:', createTaskDto.dueDate);
     if (createTaskDto.dueDate) {
       const parts = String(createTaskDto.dueDate).split('-').map(Number);
       if (parts.length === 3) {
