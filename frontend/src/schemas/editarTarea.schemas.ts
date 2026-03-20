@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const editarTareaSchema = z.object({
-  // -----modificacion para la descripción: trim + longitud + whitelist de caracteres (sin guiones)
+  // ----- frontend modificacion para la descripción: trim + longitud + whitelist de caracteres (sin guiones)
   descripcion: z
     .string()
     .transform((s) => s.trim())

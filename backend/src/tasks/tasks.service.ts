@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task } from './entities/task.entity';
@@ -40,7 +40,7 @@ export class TasksService {
     return 0.00;
   }
 
-  //-----------------------------modificacion para problema de fecha anterior parse--
+  //------------ backend modificacion para problema de fecha anterior parse--
 
   private parseDateString(value: any): Date { //parse local de la fecha, para evitar problemas de zona horaria
     if (!value) return new Date();
@@ -99,6 +99,59 @@ export class TasksService {
   async create(datos: CreateTaskDto & { estado_id?: number; prioridad_id?: number }) {
     try {
       console.log('📥 Datos recibidos del frontend:', datos);
+
+      //--------Backend Modificacion para replicar validaciones del frontend en caso de que el frontend no las ejecute por alguna razon
+      // Validaciones de negocio replicando las reglas del frontend
+      // 1) Descripción debe empezar por letra y contener sólo caracteres permitidos
+      const desc = String(datos.description || '');
+      const descripcionPermitida = /^[A-Za-zÁÉÍÓÚáéíóúÑñ][A-Za-z0-9ÁÉÍÓÚáéíóúÑñ\s\-\.,:;?()]*$/;
+      if (!descripcionPermitida.test(desc)) {
+        throw new BadRequestException('La descripción debe empezar con una letra y contener sólo caracteres permitidos.');
+      }
+
+      // 2) La fecha límite no puede ser anterior a hoy (comparación por fecha local)
+      if (datos.dueDate) {
+        const inputDate = this.parseDateString(datos.dueDate);
+        const today = new Date();
+        const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const inputDateLocal = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate());
+        if (inputDateLocal.getTime() < todayLocal.getTime()) {
+          throw new BadRequestException('La fecha no puede ser anterior a hoy');
+        }
+      }
+
+      // 3) Validaciones sobre horarios (si vienen en la petición)
+      if (Array.isArray(datos.horarios)) {
+        const now = new Date();
+        const nowRounded = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes(), 0, 0);
+        for (const h of datos.horarios) {
+          const inicio = this.parseDateString(h.inicio);
+          const fin = this.parseDateString(h.fin);
+
+          // Prohibir fin a las 00:00 (sería el siguiente día)
+          if (fin.getHours() === 0 && fin.getMinutes() === 0 && fin.getSeconds() === 0) {
+            throw new BadRequestException('La hora de fin no puede ser doce AM (sería del día siguiente).');
+          }
+
+          // Asegurar que fin > inicio
+          if (fin.getTime() <= inicio.getTime()) {
+            throw new BadRequestException('La hora de fin debe ser posterior a la de inicio.');
+          }
+
+          // Si la fecha límite es hoy, la hora de inicio no puede ser anterior a ahora
+          if (datos.dueDate) {
+            const fechaLim = this.parseDateString(datos.dueDate);
+            const fechaLimLocal = new Date(fechaLim.getFullYear(), fechaLim.getMonth(), fechaLim.getDate());
+            const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            if (fechaLimLocal.getTime() === todayLocal.getTime()) {
+              if (inicio.getTime() < nowRounded.getTime()) {
+                throw new BadRequestException('La hora de inicio no puede ser anterior a la hora actual cuando la fecha es hoy.');
+              }
+            }
+          }
+        }
+      }
+      //----------
 
       // Determinamos el estado inicial para poder calcular el avance
       const estadoInicial = datos.estado ? Number(datos.estado) : (datos.estado_id || 1);

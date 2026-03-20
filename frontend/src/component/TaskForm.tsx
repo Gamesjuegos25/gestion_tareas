@@ -10,7 +10,7 @@ const TaskForm: FC<Props> = ({ onCreated, columnaId }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
-  // --------------modificacion Lógica de fecha y hora por defecto en base a pc ------------------
+  // --------------frontend modificacion Lógica de fecha y hora por defecto en base a pc ------------------
   const formatDate = (d: Date) => {
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -53,7 +53,7 @@ const TaskForm: FC<Props> = ({ onCreated, columnaId }) => {
     if (!tituloLimpio) { setError('El título no puede estar vacío.'); return; }
     if (!descLimpia) { setError('La descripción no puede estar vacía.'); return; }
 
-    // -----modificacion Bloquear guiones y otros símbolos no permitidos en la descripción
+    // -----frontend modificacion Bloquear guiones y otros símbolos no permitidos en la descripción
     // No permitir que la descripción empiece con número o símbolo; debe empezar por letra
     const descripcionPermitida = /^[A-Za-zÁÉÍÓÚáéíóúÑñ][A-Za-z0-9ÁÉÍÓÚáéíóúÑñ\s\-\.,:;?()]*$/;
     if (!descripcionPermitida.test(descLimpia)) {
@@ -78,7 +78,7 @@ const TaskForm: FC<Props> = ({ onCreated, columnaId }) => {
       return;
     }
 
-    // --- modificacion Validacion que la hora de inicio no sea mayor a la hora de fin y que no sean iguales
+    // --- frontend modificacion Validacion que la hora de inicio no sea mayor a la hora de fin y que no sean iguales
     // Evitar que la hora de fin sea 00:00 o supere 23:59 (eso correspondería al día siguiente)
     if (horaFin === '00:00') {
       setError('La hora de fin no puede ser doce AM  (sería del día siguiente).');
@@ -93,10 +93,10 @@ const TaskForm: FC<Props> = ({ onCreated, columnaId }) => {
     const fechaFinCompleta = new Date(`${dueDate}T${horaFin}:00`);
 
 
-    //-------modificacion de hora de inicio no sea anterior a la hora actual si la fecha es hoy
+    //-------frontend modificacion de hora de inicio no sea anterior a la hora actual si la fecha es hoy
     // Si la fecha seleccionada es hoy, la hora de inicio no puede ser anterior a la hora actual
     if (inputDateLocal.getTime() === todayLocal.getTime()) {
-      if (fechaInicioCompleta < now) {
+      if (fechaInicioCompleta < nowRounded) {
         setError('La hora de inicio no puede ser anterior a la hora actual cuando la fecha es hoy.');
         return;
       }
