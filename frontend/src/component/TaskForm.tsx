@@ -27,7 +27,11 @@ const TaskForm: FC<Props> = ({ onCreated, columnaId }) => {
   const hora_actual = new Date();
   const initialDate = formatDate(hora_actual);
   const initialHoraInicio = formatTime(hora_actual);
-  const initialHoraFin = formatTime(addHours(hora_actual, 1)); // para que termine e una hora despues VALOR MODIFICABLE
+  // Si sumar una hora cruza a otro día, fijamos la hora de fin a 23:59
+  const tempInitialFin = addHours(hora_actual, 1);
+  const initialHoraFin = tempInitialFin.getDate() !== hora_actual.getDate()
+    ? '23:59'
+    : formatTime(tempInitialFin); // para que termine e una hora despues VALOR MODIFICABLE
 
   const [dueDate, setDueDate] = useState(() => initialDate);
   const [horaInicio, setHoraInicio] = useState(() => initialHoraInicio); // <-- ESTADO HORA INICIO
@@ -73,7 +77,17 @@ const TaskForm: FC<Props> = ({ onCreated, columnaId }) => {
       return;
     }
 
-    // --- MAGIA DE HORARIOS: Fusionamos la fecha (dueDate) con la hora ---
+    // --- modificacion Validacion que la hora de inicio no sea mayor a la hora de fin y que no sean iguales
+    // Evitar que la hora de fin sea 00:00 o supere 23:59 (eso correspondería al día siguiente)
+    if (horaFin === '00:00') {
+      setError('La hora de fin no puede ser doce AM  (sería del día siguiente).');
+      return;
+    }
+    if (horaFin > '23:59') {
+      setError('La hora de fin no puede ser mayor a 23:59.');
+      return;
+    }
+    //------------------------------
     const fechaInicioCompleta = new Date(`${dueDate}T${horaInicio}:00`);
     const fechaFinCompleta = new Date(`${dueDate}T${horaFin}:00`);
 
@@ -103,10 +117,11 @@ const TaskForm: FC<Props> = ({ onCreated, columnaId }) => {
       setTitle('');
       setDescription('');
       // ------------------Reset a fecha y hora actuales del PC
-    
-      setDueDate(formatDate(new Date()));
-      setHoraInicio(formatTime(new Date()));
-      setHoraFin(formatTime(addHours(new Date(), 1)));
+      const nowReset = new Date();
+      const tempFinReset = addHours(nowReset, 1);
+      setDueDate(formatDate(nowReset));
+      setHoraInicio(formatTime(nowReset));
+      setHoraFin(tempFinReset.getDate() !== nowReset.getDate() ? '23:59' : formatTime(tempFinReset));
   
       // -----------------------------------
       setPrioridadId('2');
@@ -185,6 +200,7 @@ const TaskForm: FC<Props> = ({ onCreated, columnaId }) => {
             type="time" 
             value={horaFin} 
             onChange={(e) => setHoraFin(e.target.value)} 
+            max="23:59"
             className="w-full border-3 border-brand-dark p-3 rounded-2xl font-titan text-brand-dark outline-none focus:bg-brand-yellow/5 transition-colors shadow-sm"
           />
         </div>
