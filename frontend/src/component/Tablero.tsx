@@ -317,7 +317,7 @@ export const Tablero: FC<TableroProps> = ({ tareas, setTareas, columnaCreando, s
                         className="bg-brand-dark text-brand-white p-5 rounded-[25px] shadow-lg cursor-grab hover:scale-[1.03] active:cursor-grabbing border-2 border-brand-dark transition-all group relative"
                       >
                         <div className="flex justify-between items-start mb-2">
-                          <h4 className="font-galilea font-tarea-bold text-lg leading-tight pr-6">{tarea.titulo}</h4>
+                          <h4 className="font-titan font-tarea text-lg leading-tight pr-6">{tarea.titulo}</h4>
                           <span className={`text-[9px] font-titan px-2 py-0.5 rounded-md border shadow-sm ${estiloPrioridad.color}`}>
                             {estiloPrioridad.label}
                           </span>
@@ -408,7 +408,7 @@ export const Tablero: FC<TableroProps> = ({ tareas, setTareas, columnaCreando, s
                       type="text" 
                       value={tituloEdit} 
                       onChange={(e) => setTituloEdit(e.target.value)} 
-                      className="w-full border-3 border-brand-dark p-3 rounded-2xl font-galilea font-tarea-bold outline-none focus:bg-brand-yellow/5 text-brand-dark shadow-sm" 
+                      className="w-full border-3 border-brand-dark p-3 rounded-2xl font-titan font-tarea outline-none focus:bg-brand-yellow/5 text-brand-dark shadow-sm" 
                     />
                   </div>
 
@@ -417,7 +417,7 @@ export const Tablero: FC<TableroProps> = ({ tareas, setTareas, columnaCreando, s
                     <textarea 
                       value={descEdit} 
                       onChange={(e) => setDescEdit(e.target.value)} 
-                      className="w-full border-3 border-brand-dark p-3 rounded-2xl font-galilea font-horario-reg outline-none focus:bg-brand-yellow/5 text-brand-dark resize-none" 
+                      className="w-full border-3 border-brand-dark p-3 rounded-2xl font-titan font-horario-reg outline-none focus:bg-brand-yellow/5 text-brand-dark resize-none" 
                       rows={2}
                     ></textarea>
                   </div>
