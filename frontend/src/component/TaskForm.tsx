@@ -70,6 +70,7 @@ const TaskForm: FC<Props> = ({ onCreated, columnaId }) => {
     const [y, m, d] = dueDate.split('-').map(Number);
     const inputDateLocal = new Date(y, m - 1, d);
     const now = new Date();
+    const nowRounded = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes(), 0, 0);
     const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
     if (inputDateLocal < todayLocal) {
@@ -91,6 +92,16 @@ const TaskForm: FC<Props> = ({ onCreated, columnaId }) => {
     const fechaInicioCompleta = new Date(`${dueDate}T${horaInicio}:00`);
     const fechaFinCompleta = new Date(`${dueDate}T${horaFin}:00`);
 
+
+    //-------modificacion de hora de inicio no sea anterior a la hora actual si la fecha es hoy
+    // Si la fecha seleccionada es hoy, la hora de inicio no puede ser anterior a la hora actual
+    if (inputDateLocal.getTime() === todayLocal.getTime()) {
+      if (fechaInicioCompleta < now) {
+        setError('La hora de inicio no puede ser anterior a la hora actual cuando la fecha es hoy.');
+        return;
+      }
+    }
+    //---------------
     if (fechaInicioCompleta >= fechaFinCompleta) {
       setError('La hora de fin debe ser posterior a la de inicio.');
       return;
